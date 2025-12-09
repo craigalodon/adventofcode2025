@@ -11,8 +11,8 @@ I have mixed feelings about it, but I think it is a great language for learning.
 
 - There is generally only one way to do something, so you aren't distracted with
   learning syntactic sugar.
-- The langauge is somewhat minimalistic, so you have to implement many common
+- The language is somewhat minimalistic, so you have to implement many common
   data structures and algorithms yourself.
   
 Hopefully the repo structure will speak for itself. You can find my reflections
-on the challenges [here](./journal/).
+on the challenges in the [journal](./journal/).
