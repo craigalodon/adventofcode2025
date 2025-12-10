@@ -1,11 +1,12 @@
 package main
 
 import (
-	"adventofcode2025/internal/mathutils"
 	"fmt"
 	"math"
 	"os"
 	"strconv"
+
+	"adventofcode2025/internal/mathutils"
 )
 
 type Range struct {
