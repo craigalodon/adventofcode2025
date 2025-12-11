@@ -71,10 +71,10 @@ func getMaxJoltage(bank string, k int) (int, error) {
 			return 0, fmt.Errorf("error parsing bank: %v", err)
 		}
 
-		x := len(bank) - i - 1
+		remaining := len(bank) - i - 1
 
 		for j, v1 := range values {
-			if x < k-j-1 {
+			if remaining < k-j-1 {
 				continue
 			}
 
