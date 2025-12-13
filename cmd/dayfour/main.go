@@ -24,24 +24,25 @@ func main() {
 	contents := string(bytes)
 
 	cols := getCols(contents)
-	seen, rolls := getRolls(contents, cols)
+	rolls := getRolls(contents, cols)
 
 	movable := 0
-	moved := make(map[int]bool)
 	try := true
 
 	for try {
 		try = false
-		for _, r := range rolls {
-			if moved[r] {
+		removed := make([]int, 0)
+
+		for r, exists := range rolls {
+			if !exists {
 				continue
 			}
 
-			adj := getAdjacent(r, cols, seen)
+			adj := getAdjacent(r, cols, rolls)
 
 			if adj < 4 {
 				movable++
-				moved[r] = true
+				removed = append(removed, r)
 				try = true
 			}
 		}
@@ -50,16 +51,15 @@ func main() {
 			break
 		}
 
-		// remove moved
-		for k := range moved {
-			seen[k] = false
+		for _, r := range removed {
+			rolls[r] = false
 		}
 	}
 
 	fmt.Printf("Movable Rolls: %v\n", movable)
 }
 
-func getAdjacent(r int, cols int, seen map[int]bool) int {
+func getAdjacent(r int, cols int, rolls map[int]bool) int {
 	adj := 0
 
 	e := r + 1
@@ -74,36 +74,35 @@ func getAdjacent(r int, cols int, seen map[int]bool) int {
 	left := mathutils.Mod(r, cols) != 0
 	right := mathutils.Mod(r+1, cols) != 0
 
-	if right && seen[e] {
+	if right && rolls[e] {
 		adj++
 	}
-	if left && seen[w] {
+	if left && rolls[w] {
 		adj++
 	}
-	if seen[n] {
+	if rolls[n] {
 		adj++
 	}
-	if seen[s] {
+	if rolls[s] {
 		adj++
 	}
-	if right && seen[ne] {
+	if right && rolls[ne] {
 		adj++
 	}
-	if left && seen[nw] {
+	if left && rolls[nw] {
 		adj++
 	}
-	if right && seen[se] {
+	if right && rolls[se] {
 		adj++
 	}
-	if left && seen[sw] {
+	if left && rolls[sw] {
 		adj++
 	}
 	return adj
 }
 
-func getRolls(contents string, cols int) (map[int]bool, []int) {
-	seen := make(map[int]bool)
-	rolls := make([]int, 0)
+func getRolls(contents string, cols int) map[int]bool {
+	rolls := make(map[int]bool)
 
 	i := 0
 	j := 0
@@ -116,13 +115,12 @@ func getRolls(contents string, cols int) (map[int]bool, []int) {
 		}
 
 		if r == '@' {
-			seen[i*cols+j] = true
-			rolls = append(rolls, i*cols+j)
+			rolls[i*cols+j] = true
 		}
 
 		j++
 	}
-	return seen, rolls
+	return rolls
 }
 
 func getCols(contents string) int {
