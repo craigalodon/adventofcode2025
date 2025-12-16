@@ -71,7 +71,7 @@ func run() error {
 	i := 1
 
 	for i < len(ranges) {
-		result, success := curr.Union(ranges[i])
+		result, success := curr.TryUnionWith(ranges[i])
 		if success {
 			curr = result
 		} else {

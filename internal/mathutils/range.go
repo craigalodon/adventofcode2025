@@ -17,7 +17,7 @@ func (r *Range) Size() int {
 	return r.Hi - r.Lo
 }
 
-func (r *Range) Union(o *Range) (*Range, bool) {
+func (r *Range) TryUnionWith(o *Range) (*Range, bool) {
 	if r.Lo > o.Hi || o.Lo > r.Hi {
 		return nil, false
 	}
