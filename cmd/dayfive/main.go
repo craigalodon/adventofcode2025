@@ -18,8 +18,7 @@ func main() {
 
 func run() error {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: go run . <path/to/input/file>")
-		os.Exit(1)
+		return fmt.Errorf("usage: go run . <path/to/input/file>")
 	}
 
 	file, err := os.Open(os.Args[1])
