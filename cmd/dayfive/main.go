@@ -65,6 +65,27 @@ func run() error {
 		return 1
 	})
 
+	unioned := make([]*mathutils.Range, 0, len(ranges))
+	ids := 0
+
+	curr := ranges[0]
+	i := 1
+
+	for i < len(ranges) {
+		result, success := curr.Union(ranges[i])
+		if success {
+			curr = result
+		} else {
+			unioned = append(unioned, curr)
+			ids += curr.Size()
+			curr = ranges[i]
+		}
+		i++
+	}
+
+	unioned = append(unioned, curr)
+	ids += curr.Size()
+
 	count := 0
 
 	for scanner.Scan() {
@@ -73,7 +94,7 @@ func run() error {
 		if err != nil {
 			return fmt.Errorf("error parsing line: %w", err)
 		}
-		for _, r := range ranges {
+		for _, r := range unioned {
 			if r.Contains(v) {
 				count++
 				break
@@ -82,6 +103,7 @@ func run() error {
 	}
 
 	fmt.Printf("Fresh Ingredients: %v\n", count)
+	fmt.Printf("There are %v ids\n", ids)
 
 	return nil
 }
