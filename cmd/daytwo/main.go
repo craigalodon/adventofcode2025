@@ -9,11 +9,6 @@ import (
 	"adventofcode2025/internal/mathutils"
 )
 
-type Range struct {
-	Lo int
-	Hi int
-}
-
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: go run . <path/to/input/file>")
@@ -42,8 +37,8 @@ func main() {
 	fmt.Printf("Part 2: %v\n", part2)
 }
 
-func parse(data string) ([]Range, error) {
-	ranges := []Range{}
+func parse(data string) ([]*mathutils.Range, error) {
+	ranges := []*mathutils.Range{}
 
 	h2 := 0
 	t2 := 0
@@ -63,7 +58,7 @@ func parse(data string) ([]Range, error) {
 			}
 
 			h2 = t2 + 1
-			ranges = append(ranges, Range{v1, v2})
+			ranges = append(ranges, mathutils.NewRange(v1, v2))
 		}
 		if data[t2] == '-' {
 			h1 = h2
@@ -75,19 +70,19 @@ func parse(data string) ([]Range, error) {
 	return ranges, nil
 }
 
-func intersectWithBand(ranges []Range, lo_band, hi_band int) []Range {
-	out := []Range{}
+func intersectWithBand(ranges []*mathutils.Range, lo_band, hi_band int) []*mathutils.Range {
+	out := []*mathutils.Range{}
 	for _, r := range ranges {
 		lo2 := max(r.Lo, lo_band)
 		hi2 := min(r.Hi, hi_band)
 		if lo2 <= hi2 {
-			out = append(out, Range{lo2, hi2})
+			out = append(out, mathutils.NewRange(lo2, hi2))
 		}
 	}
 	return out
 }
 
-func sumInvalids(ranges []Range, at_least_twice bool) int {
+func sumInvalids(ranges []*mathutils.Range, at_least_twice bool) int {
 	if len(ranges) == 0 {
 		return 0
 	}
