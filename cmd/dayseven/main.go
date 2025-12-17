@@ -46,8 +46,12 @@ func run() error {
 			if r == '^' && beams[i] {
 				splits++
 				next[i] = false
-				next[i-1] = true
-				next[i+1] = true
+				if i-1 >= 0 {
+					next[i-1] = true
+				}
+				if i+1 < len(line) {
+					next[i+1] = true
+				}
 			}
 		}
 		beams = next
