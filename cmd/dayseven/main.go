@@ -34,18 +34,23 @@ func run() error {
 	splits := 0
 	for scanner.Scan() {
 		line := scanner.Text()
+		next := make(map[int]bool)
+		for k, v := range beams {
+			next[k] = v
+		}
 		for i, r := range line {
 			if r == 'S' {
-				beams[i] = true
+				next[i] = true
 				continue
 			}
 			if r == '^' && beams[i] {
 				splits++
-				beams[i] = false
-				beams[i-1] = true
-				beams[i+1] = true
+				next[i] = false
+				next[i-1] = true
+				next[i+1] = true
 			}
 		}
+		beams = next
 	}
 
 	if err := scanner.Err(); err != nil {
