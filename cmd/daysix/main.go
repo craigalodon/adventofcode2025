@@ -28,7 +28,7 @@ func run() error {
 
 	rows, err := readFile(os.Args[1])
 	if err != nil {
-		return err
+		return fmt.Errorf("error while reading file: %w", err)
 	}
 
 	cols := initCols(rows[len(rows)-1])
