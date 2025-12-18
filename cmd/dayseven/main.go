@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"maps"
 	"os"
 )
 
@@ -30,27 +31,27 @@ func run() error {
 
 	scanner := bufio.NewScanner(file)
 
-	beams := make(map[int]bool)
+	beams := make(map[int]int)
 	splits := 0
+	timelines := 1
 	for scanner.Scan() {
 		line := scanner.Text()
-		next := make(map[int]bool)
-		for k, v := range beams {
-			next[k] = v
-		}
+		next := make(map[int]int)
+		maps.Copy(next, beams)
 		for i, r := range line {
 			if r == 'S' {
-				next[i] = true
+				next[i] = 1
 				continue
 			}
-			if r == '^' && beams[i] {
+			if r == '^' && beams[i] > 0 {
 				splits++
-				next[i] = false
+				timelines += beams[i]
+				next[i] = 0
 				if i-1 >= 0 {
-					next[i-1] = true
+					next[i-1] += beams[i]
 				}
 				if i+1 < len(line) {
-					next[i+1] = true
+					next[i+1] += beams[i]
 				}
 			}
 		}
@@ -62,6 +63,7 @@ func run() error {
 	}
 
 	fmt.Printf("Splits: %v\n", splits)
+	fmt.Printf("Timelines: %v\n", timelines)
 
 	return nil
 }
