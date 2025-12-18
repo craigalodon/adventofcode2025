@@ -101,6 +101,10 @@ func run() error {
 		}
 	}
 
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("error reading file: %w", err)
+	}
+
 	fmt.Printf("Fresh Ingredients: %v\n", count)
 	fmt.Printf("There are %v ids\n", ids)
 

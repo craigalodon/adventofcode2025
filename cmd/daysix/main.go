@@ -191,6 +191,10 @@ func readFile(filepath string) ([]string, error) {
 		rows = append(rows, row)
 	}
 
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading file: %w", err)
+	}
+
 	if err := file.Close(); err != nil {
 		return nil, fmt.Errorf("error closing file: %w", err)
 	}
