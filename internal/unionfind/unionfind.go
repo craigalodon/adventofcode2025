@@ -5,56 +5,64 @@ type Pair[T any] interface {
 	Second() T
 }
 
-func BuildParentMap[T comparable](pairs []Pair[T]) map[T]T {
+func makeSet[T comparable](val T, parent map[T]T, rank map[T]int) {
+	if _, exists := parent[val]; exists {
+		return
+	}
+	parent[val] = val
+	rank[val] = 0
+}
 
+func find[T comparable](val T, parent map[T]T) T {
+	if parent[val] != val {
+		parent[val] = find(parent[val], parent)
+	}
+	return parent[val]
+}
+
+func union[T comparable](v1, v2 T, parent map[T]T, rank map[T]int) {
+	ra := find(v1, parent)
+	rb := find(v2, parent)
+
+	if ra == rb {
+		return
+	}
+
+	rka := rank[ra]
+	rkb := rank[rb]
+
+	if rka < rkb {
+		parent[ra] = rb
+	} else if rka > rkb {
+		parent[rb] = ra
+	} else {
+		parent[rb] = ra
+		rank[ra] = rka + 1
+	}
+}
+
+func AppendParentMap[T comparable](p Pair[T], parent map[T]T, rank map[T]int) {
+	makeSet(p.First(), parent, rank)
+	makeSet(p.Second(), parent, rank)
+	union(p.First(), p.Second(), parent, rank)
+
+	for k := range parent {
+		find(k, parent)
+	}
+}
+
+func BuildParentMap[T comparable](pairs []Pair[T]) map[T]T {
 	parent := make(map[T]T)
 	rank := make(map[T]int)
 
-	makeSet := func(val T) {
-		if _, exists := parent[val]; exists {
-			return
-		}
-		parent[val] = val
-		rank[val] = 0
-	}
-
-	var find func(val T) T
-	find = func(val T) T {
-		if parent[val] != val {
-			parent[val] = find(parent[val])
-		}
-		return parent[val]
-	}
-
-	union := func(v1, v2 T) {
-		ra := find(v1)
-		rb := find(v2)
-
-		if ra == rb {
-			return
-		}
-
-		rka := rank[ra]
-		rkb := rank[rb]
-
-		if rka < rkb {
-			parent[ra] = rb
-		} else if rka > rkb {
-			parent[rb] = ra
-		} else {
-			parent[rb] = ra
-			rank[ra] = rka + 1
-		}
-	}
-
 	for _, p := range pairs {
-		makeSet(p.First())
-		makeSet(p.Second())
-		union(p.First(), p.Second())
+		makeSet(p.First(), parent, rank)
+		makeSet(p.Second(), parent, rank)
+		union(p.First(), p.Second(), parent, rank)
 	}
 
 	for k := range parent {
-		find(k)
+		find(k, parent)
 	}
 
 	return parent

@@ -158,20 +158,55 @@ func run() error {
 	pointPtrs := toPointers(points)
 	root := mathutils.KDTree(pointPtrs, 0)
 	closest := getClosestPairs(pointPtrs, root, k)
-	connected := getConnected(conn, closest)
+	closestCopy := deepCopyHeap(closest)
+	connected := getConnected(conn, closestCopy)
 	parents := unionfind.BuildParentMap(connected)
 	sorted := getSortedCircuitSizes(parents)
 	vol := calculateCircuitVolume(sorted)
 
 	fmt.Printf("The volume of the three largest circuits is %v\n", vol)
 
+	dist, err := getDistanceFromWall(closest, points)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("The distance from the wall is %d\n", dist)
+
 	return nil
+}
+
+func getDistanceFromWall(closest *JunctionBoxPairDistMinHeap, points []JunctionBox) (int, error) {
+	parent := make(map[JunctionBox]JunctionBox)
+	rank := make(map[JunctionBox]int)
+
+	for closest.Len() > 0 {
+		curr := heap.Pop(closest).(JunctionBoxPairDistance)
+		unionfind.AppendParentMap(curr.Pair, parent, rank)
+		seen := make(map[JunctionBox]bool)
+		for _, v := range parent {
+			seen[v] = true
+		}
+		if len(parent) == len(points) && len(seen) == 1 {
+			dist := int(curr.Pair.Left.X * curr.Pair.Right.X)
+			return dist, nil
+		}
+	}
+	return 0, fmt.Errorf("unable to connect all junction boxes")
+}
+
+func deepCopyHeap(closest *JunctionBoxPairDistMinHeap) *JunctionBoxPairDistMinHeap {
+	closestCopy := &JunctionBoxPairDistMinHeap{}
+	*closestCopy = append(*closestCopy, *closest...)
+	heap.Init(closestCopy)
+	return closestCopy
 }
 
 func calculateCircuitVolume(sorted *CircuitMaxHeap) int {
 	vol := 1
 	for range 3 {
-		vol *= heap.Pop(sorted).(int)
+		if sorted.Len() > 0 {
+			vol *= heap.Pop(sorted).(int)
+		}
 	}
 	return vol
 }
