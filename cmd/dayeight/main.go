@@ -2,7 +2,7 @@ package main
 
 import (
 	"adventofcode2025/internal/mathutils"
-	"adventofcode2025/internal/sets"
+	"adventofcode2025/internal/unionfind"
 	"bufio"
 	"container/heap"
 	"fmt"
@@ -159,7 +159,7 @@ func run() error {
 	root := mathutils.KDTree(pointPtrs, 0)
 	closest := getClosestPairs(pointPtrs, root, k)
 	connected := getConnected(conn, closest)
-	parents := sets.GetRoots(connected)
+	parents := unionfind.BuildParentMap(connected)
 	sorted := getSortedCircuitSizes(parents)
 	vol := calculateCircuitVolume(sorted)
 
@@ -190,8 +190,8 @@ func getSortedCircuitSizes(parents map[JunctionBox]JunctionBox) *CircuitMaxHeap 
 	return h
 }
 
-func getConnected(conn int, closest *JunctionBoxPairDistMinHeap) []sets.Pair[JunctionBox] {
-	connected := make([]sets.Pair[JunctionBox], 0, conn)
+func getConnected(conn int, closest *JunctionBoxPairDistMinHeap) []unionfind.Pair[JunctionBox] {
+	connected := make([]unionfind.Pair[JunctionBox], 0, conn)
 	for range conn {
 		curr := heap.Pop(closest).(JunctionBoxPairDistance)
 		connected = append(connected, curr.Pair)

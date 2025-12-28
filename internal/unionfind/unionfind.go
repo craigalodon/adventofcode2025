@@ -1,11 +1,11 @@
-package sets
+package unionfind
 
 type Pair[T any] interface {
 	First() T
 	Second() T
 }
 
-func GetRoots[T comparable](pairs []Pair[T]) map[T]T {
+func BuildParentMap[T comparable](pairs []Pair[T]) map[T]T {
 
 	parent := make(map[T]T)
 	rank := make(map[T]int)
