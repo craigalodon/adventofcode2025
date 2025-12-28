@@ -158,7 +158,7 @@ func run() error {
 	pointPtrs := toPointers(points)
 	root := mathutils.KDTree(pointPtrs, 0)
 	closest := getClosestPairs(pointPtrs, root, k)
-	closestCopy := deepCopyHeap(closest)
+	closestCopy := deepCopyValidHeap(closest)
 	connected := getConnected(conn, closestCopy)
 	parents := unionfind.BuildParentMap(connected)
 	sorted := getSortedCircuitSizes(parents)
@@ -178,26 +178,42 @@ func run() error {
 func getDistanceFromWall(closest *JunctionBoxPairDistMinHeap, points []JunctionBox) (int, error) {
 	parent := make(map[JunctionBox]JunctionBox)
 	rank := make(map[JunctionBox]int)
+	components := len(points)
+
+	for _, point := range points {
+		parent[point] = point
+		rank[point] = 0
+	}
 
 	for closest.Len() > 0 {
 		curr := heap.Pop(closest).(JunctionBoxPairDistance)
-		unionfind.AppendParentMap(curr.Pair, parent, rank)
-		seen := make(map[JunctionBox]bool)
-		for _, v := range parent {
-			seen[v] = true
-		}
-		if len(parent) == len(points) && len(seen) == 1 {
-			dist := int(curr.Pair.Left.X * curr.Pair.Right.X)
-			return dist, nil
+
+		root1 := unionfind.Find(curr.Pair.Left, parent)
+		root2 := unionfind.Find(curr.Pair.Right, parent)
+
+		if root1 != root2 {
+			if rank[root1] < rank[root2] {
+				parent[root1] = root2
+			} else if rank[root1] > rank[root2] {
+				parent[root2] = root1
+			} else {
+				parent[root2] = root1
+				rank[root1]++
+			}
+			components--
+
+			if components == 1 {
+				dist := int(curr.Pair.Left.X * curr.Pair.Right.X)
+				return dist, nil
+			}
 		}
 	}
 	return 0, fmt.Errorf("unable to connect all junction boxes")
 }
 
-func deepCopyHeap(closest *JunctionBoxPairDistMinHeap) *JunctionBoxPairDistMinHeap {
+func deepCopyValidHeap(closest *JunctionBoxPairDistMinHeap) *JunctionBoxPairDistMinHeap {
 	closestCopy := &JunctionBoxPairDistMinHeap{}
 	*closestCopy = append(*closestCopy, *closest...)
-	heap.Init(closestCopy)
 	return closestCopy
 }
 

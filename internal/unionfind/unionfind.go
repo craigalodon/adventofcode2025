@@ -13,16 +13,16 @@ func makeSet[T comparable](val T, parent map[T]T, rank map[T]int) {
 	rank[val] = 0
 }
 
-func find[T comparable](val T, parent map[T]T) T {
+func Find[T comparable](val T, parent map[T]T) T {
 	if parent[val] != val {
-		parent[val] = find(parent[val], parent)
+		parent[val] = Find(parent[val], parent)
 	}
 	return parent[val]
 }
 
 func union[T comparable](v1, v2 T, parent map[T]T, rank map[T]int) {
-	ra := find(v1, parent)
-	rb := find(v2, parent)
+	ra := Find(v1, parent)
+	rb := Find(v2, parent)
 
 	if ra == rb {
 		return
@@ -41,16 +41,6 @@ func union[T comparable](v1, v2 T, parent map[T]T, rank map[T]int) {
 	}
 }
 
-func AppendParentMap[T comparable](p Pair[T], parent map[T]T, rank map[T]int) {
-	makeSet(p.First(), parent, rank)
-	makeSet(p.Second(), parent, rank)
-	union(p.First(), p.Second(), parent, rank)
-
-	for k := range parent {
-		find(k, parent)
-	}
-}
-
 func BuildParentMap[T comparable](pairs []Pair[T]) map[T]T {
 	parent := make(map[T]T)
 	rank := make(map[T]int)
@@ -62,7 +52,7 @@ func BuildParentMap[T comparable](pairs []Pair[T]) map[T]T {
 	}
 
 	for k := range parent {
-		find(k, parent)
+		Find(k, parent)
 	}
 
 	return parent
