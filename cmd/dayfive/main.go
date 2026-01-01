@@ -11,7 +11,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -27,7 +27,7 @@ func run() error {
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error closing file: %v\n", err)
+			_, _ = fmt.Fprintf(os.Stderr, "Error closing file: %v\n", err)
 		}
 	}()
 

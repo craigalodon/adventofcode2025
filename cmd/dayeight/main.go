@@ -2,6 +2,7 @@ package main
 
 import (
 	"adventofcode2025/internal/mathutils"
+	"adventofcode2025/internal/spatial"
 	"adventofcode2025/internal/unionfind"
 	"bufio"
 	"container/heap"
@@ -70,16 +71,16 @@ func NewJunctionBoxPairDistance(pair JunctionBoxPair, dist float64) JunctionBoxP
 
 type JunctionBoxPairDistMinHeap []JunctionBoxPairDistance
 
-func (h JunctionBoxPairDistMinHeap) Len() int {
-	return len(h)
+func (h *JunctionBoxPairDistMinHeap) Len() int {
+	return len(*h)
 }
 
-func (h JunctionBoxPairDistMinHeap) Less(i, j int) bool {
-	return h[i].Distance < h[j].Distance
+func (h *JunctionBoxPairDistMinHeap) Less(i, j int) bool {
+	return (*h)[i].Distance < (*h)[j].Distance
 }
 
-func (h JunctionBoxPairDistMinHeap) Swap(i, j int) {
-	h[i], h[j] = h[j], h[i]
+func (h *JunctionBoxPairDistMinHeap) Swap(i, j int) {
+	(*h)[i], (*h)[j] = (*h)[j], (*h)[i]
 }
 
 func (h *JunctionBoxPairDistMinHeap) Push(x any) {
@@ -96,16 +97,16 @@ func (h *JunctionBoxPairDistMinHeap) Pop() any {
 
 type CircuitMaxHeap []int
 
-func (h CircuitMaxHeap) Len() int {
-	return len(h)
+func (h *CircuitMaxHeap) Len() int {
+	return len(*h)
 }
 
-func (h CircuitMaxHeap) Less(i, j int) bool {
-	return h[i] > h[j]
+func (h *CircuitMaxHeap) Less(i, j int) bool {
+	return (*h)[i] > (*h)[j]
 }
 
-func (h CircuitMaxHeap) Swap(i, j int) {
-	h[i], h[j] = h[j], h[i]
+func (h *CircuitMaxHeap) Swap(i, j int) {
+	(*h)[i], (*h)[j] = (*h)[j], (*h)[i]
 }
 
 func (h *CircuitMaxHeap) Push(x any) {
@@ -130,7 +131,7 @@ func toPointers(boxes []JunctionBox) []*JunctionBox {
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -156,7 +157,7 @@ func run() error {
 	}
 
 	pointPtrs := toPointers(points)
-	root := mathutils.KDTree(pointPtrs, 0)
+	root := spatial.KDTree(pointPtrs, 0)
 	closest := getClosestPairs(pointPtrs, root, k)
 	closestCopy := deepCopyValidHeap(closest)
 	connected := getConnected(conn, closestCopy)
@@ -250,15 +251,15 @@ func getConnected(conn int, closest *JunctionBoxPairDistMinHeap) []unionfind.Pai
 	return connected
 }
 
-func getClosestPairs(points []*JunctionBox, root *mathutils.Node[JunctionBox], k int) *JunctionBoxPairDistMinHeap {
+func getClosestPairs(points []*JunctionBox, root *spatial.Node[JunctionBox], k int) *JunctionBoxPairDistMinHeap {
 	h := &JunctionBoxPairDistMinHeap{}
 	seen := make(map[JunctionBoxPair]bool)
 
 	for _, p := range points {
-		best := &mathutils.NodeDistMaxHeap[JunctionBox]{}
-		mathutils.KNearestNeighbors(root, p, k, best, 0)
+		best := &spatial.NodeDistMaxHeap[JunctionBox]{}
+		spatial.KNearestNeighbors(root, p, k, best, 0)
 		for range k - 1 {
-			curr := heap.Pop(best).(mathutils.NodeDistance[JunctionBox])
+			curr := heap.Pop(best).(spatial.NodeDistance[JunctionBox])
 			pair := NewJunctionBoxPair(p, curr.Node.Point)
 			reversed := NewJunctionBoxPair(curr.Node.Point, p)
 			if !seen[reversed] {
@@ -278,7 +279,7 @@ func readPointsFromFile(path string) ([]JunctionBox, error) {
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error closing file: %v\n", err)
+			_, _ = fmt.Fprintf(os.Stderr, "Error closing file: %v\n", err)
 		}
 	}()
 
