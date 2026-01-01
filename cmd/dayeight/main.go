@@ -27,8 +27,10 @@ func (j JunctionBox) GetValue(depth int) float64 {
 		return j.X
 	case 1:
 		return j.Y
-	default:
+	case 2:
 		return j.Z
+	default:
+		panic("Invalid axis value")
 	}
 }
 
