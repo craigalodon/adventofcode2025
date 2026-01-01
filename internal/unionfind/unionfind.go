@@ -15,7 +15,7 @@ func makeSet[T comparable](val T, parent map[T]T, rank map[T]int) {
 
 func Find[T comparable](val T, parent map[T]T) T {
 	if parent[val] != val {
-		parent[val] = Find(parent[val], parent)
+		parent[val] = Find[T](parent[val], parent)
 	}
 	return parent[val]
 }

@@ -16,7 +16,7 @@ type Col struct {
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -136,18 +136,18 @@ func trimThenAtoi(s string) (int, error) {
 }
 
 func leftJustifyGrid(grid []string) {
-	max := len(grid[0])
+	m := len(grid[0])
 	for i := 1; i < len(grid); i++ {
 		curr := len(grid[i])
-		if curr > max {
-			max = curr
+		if curr > m {
+			m = curr
 		}
 	}
 
 	for i := range len(grid) {
 		curr := len(grid[i])
-		if curr < max {
-			padding := max - curr
+		if curr < m {
+			padding := m - curr
 			grid[i] = grid[i] + strings.Repeat(" ", padding)
 		}
 	}

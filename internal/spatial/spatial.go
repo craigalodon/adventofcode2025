@@ -1,6 +1,7 @@
-package mathutils
+package spatial
 
 import (
+	"adventofcode2025/internal/mathutils"
 	"container/heap"
 	"math"
 	"slices"
@@ -40,12 +41,12 @@ func KDTree[T Point](points []*T, depth int) *Node[T] {
 		return (int)(v1 - v2)
 	})
 
-	median := FloorDiv(len(points), 2)
+	median := mathutils.FloorDiv(len(points), 2)
 
 	node := Node[T]{
 		Point:      points[median],
-		LeftChild:  KDTree(points[:median], depth+1),
-		RightChild: KDTree(points[median+1:], depth+1),
+		LeftChild:  KDTree[T](points[:median], depth+1),
+		RightChild: KDTree[T](points[median+1:], depth+1),
 	}
 
 	return &node
@@ -58,16 +59,16 @@ type NodeDistance[T Point] struct {
 
 type NodeDistMaxHeap[T Point] []NodeDistance[T]
 
-func (h NodeDistMaxHeap[T]) Len() int {
-	return len(h)
+func (h *NodeDistMaxHeap[T]) Len() int {
+	return len(*h)
 }
 
-func (h NodeDistMaxHeap[T]) Less(i, j int) bool {
-	return h[i].Distance > h[j].Distance
+func (h *NodeDistMaxHeap[T]) Less(i, j int) bool {
+	return (*h)[i].Distance > (*h)[j].Distance
 }
 
-func (h NodeDistMaxHeap[T]) Swap(i, j int) {
-	h[i], h[j] = h[j], h[i]
+func (h *NodeDistMaxHeap[T]) Swap(i, j int) {
+	(*h)[i], (*h)[j] = (*h)[j], (*h)[i]
 }
 
 func (h *NodeDistMaxHeap[T]) Push(x any) {
@@ -107,13 +108,13 @@ func KNearestNeighbors[T Point](root *Node[T], target *T, k int, h *NodeDistMaxH
 		oppositeBranch = root.LeftChild
 	}
 
-	KNearestNeighbors(nextBranch, target, k, h, depth+1)
+	KNearestNeighbors[T](nextBranch, target, k, h, depth+1)
 
 	if axisDist < 0 {
 		axisDist = -axisDist
 	}
 
 	if h.Len() < k || axisDist < (*h)[0].Distance {
-		KNearestNeighbors(oppositeBranch, target, k, h, depth+1)
+		KNearestNeighbors[T](oppositeBranch, target, k, h, depth+1)
 	}
 }

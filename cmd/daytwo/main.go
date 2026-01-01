@@ -38,8 +38,7 @@ func main() {
 }
 
 func parse(data string) ([]*mathutils.Range, error) {
-	ranges := []*mathutils.Range{}
-
+	var ranges []*mathutils.Range
 	h2 := 0
 	t2 := 0
 	h1 := 0
@@ -70,11 +69,11 @@ func parse(data string) ([]*mathutils.Range, error) {
 	return ranges, nil
 }
 
-func intersectWithBand(ranges []*mathutils.Range, lo_band, hi_band int) []*mathutils.Range {
-	out := []*mathutils.Range{}
+func intersectWithBand(ranges []*mathutils.Range, loBand, hiBand int) []*mathutils.Range {
+	var out []*mathutils.Range
 	for _, r := range ranges {
-		lo2 := max(r.Lo, lo_band)
-		hi2 := min(r.Hi, hi_band)
+		lo2 := max(r.Lo, loBand)
+		hi2 := min(r.Hi, hiBand)
 		if lo2 <= hi2 {
 			out = append(out, mathutils.NewRange(lo2, hi2))
 		}
@@ -82,32 +81,32 @@ func intersectWithBand(ranges []*mathutils.Range, lo_band, hi_band int) []*mathu
 	return out
 }
 
-func sumInvalids(ranges []*mathutils.Range, at_least_twice bool) int {
+func sumInvalids(ranges []*mathutils.Range, atLeastTwice bool) int {
 	if len(ranges) == 0 {
 		return 0
 	}
 
-	max_hi := 0
+	maxHi := 0
 	for _, r := range ranges {
-		if r.Hi > max_hi {
-			max_hi = r.Hi
+		if r.Hi > maxHi {
+			maxHi = r.Hi
 		}
 	}
 
-	if max_hi <= 0 {
+	if maxHi <= 0 {
 		return 0
 	}
 
-	L_max := mathutils.CountDigits(max_hi)
+	LMax := mathutils.CountDigits(maxHi)
 	seen := make(map[int]bool)
 
-	for L := 1; L < L_max+1; L++ {
-		lo_band := int(math.Pow(10, (float64(L) - 1.0)))
-		hi_band := int(math.Pow(10, float64(L))) - 1
+	for L := 1; L < LMax+1; L++ {
+		loBand := int(math.Pow(10, float64(L)-1.0))
+		hiBand := int(math.Pow(10, float64(L))) - 1
 
-		band_ranges := intersectWithBand(ranges, lo_band, hi_band)
+		bandRanges := intersectWithBand(ranges, loBand, hiBand)
 
-		if len(band_ranges) == 0 {
+		if len(bandRanges) == 0 {
 			continue
 		}
 
@@ -116,7 +115,7 @@ func sumInvalids(ranges []*mathutils.Range, at_least_twice bool) int {
 		for _, d := range divisors {
 			k := L / d
 
-			if at_least_twice {
+			if atLeastTwice {
 				if k < 2 {
 					continue
 				}
@@ -127,18 +126,18 @@ func sumInvalids(ranges []*mathutils.Range, at_least_twice bool) int {
 			}
 
 			R := (int(math.Pow(10, float64(L))) - 1) / (int(math.Pow(10, float64(d))) - 1)
-			B_digit_min := int(math.Pow(10, (float64(d) - 1.0)))
-			B_digit_max := int(math.Pow(10, (float64(d)))) - 1
+			BDigitMin := int(math.Pow(10, float64(d)-1.0))
+			BDigitMax := int(math.Pow(10, float64(d))) - 1
 
-			for _, r := range band_ranges {
-				B_min := max(B_digit_min, (r.Lo+R-1)/R)
-				B_max := min(B_digit_max, r.Hi/R)
+			for _, r := range bandRanges {
+				BMin := max(BDigitMin, (r.Lo+R-1)/R)
+				BMax := min(BDigitMax, r.Hi/R)
 
-				if B_min > B_max {
+				if BMin > BMax {
 					continue
 				}
 
-				for B := B_min; B <= B_max; B++ {
+				for B := BMin; B <= BMax; B++ {
 					N := B * R
 					seen[N] = true
 				}

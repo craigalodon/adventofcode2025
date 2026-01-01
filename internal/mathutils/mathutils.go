@@ -16,7 +16,7 @@ func FloorDiv(a, b int) int {
 }
 
 func ProperDivisors(n int) []int {
-	res := []int{}
+	var res []int
 
 	i := 1
 
