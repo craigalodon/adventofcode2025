@@ -2,6 +2,7 @@ package main
 
 import (
 	"adventofcode2025/internal/mathutils"
+	"adventofcode2025/internal/refutils"
 	"adventofcode2025/internal/spatial"
 	"adventofcode2025/internal/unionfind"
 	"bufio"
@@ -26,8 +27,10 @@ func (j JunctionBox) GetValue(depth int) float64 {
 		return j.X
 	case 1:
 		return j.Y
-	default:
+	case 2:
 		return j.Z
+	default:
+		panic("Invalid axis value")
 	}
 }
 
@@ -121,14 +124,6 @@ func (h *CircuitMaxHeap) Pop() any {
 	return item
 }
 
-func toPointers(boxes []JunctionBox) []*JunctionBox {
-	result := make([]*JunctionBox, len(boxes))
-	for i := range boxes {
-		result[i] = &boxes[i]
-	}
-	return result
-}
-
 func main() {
 	if err := run(); err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -156,8 +151,8 @@ func run() error {
 		return err
 	}
 
-	pointPtrs := toPointers(points)
-	root := spatial.KDTree(pointPtrs, 0)
+	pointPtrs := refutils.ToPointers(points)
+	root := spatial.KDTree(pointPtrs)
 	closest := getClosestPairs(pointPtrs, root, k)
 	closestCopy := deepCopyValidHeap(closest)
 	connected := getConnected(conn, closestCopy)
@@ -257,7 +252,7 @@ func getClosestPairs(points []*JunctionBox, root *spatial.Node[JunctionBox], k i
 
 	for _, p := range points {
 		best := &spatial.NodeDistMaxHeap[JunctionBox]{}
-		spatial.KNearestNeighbors(root, p, k, best, 0)
+		spatial.KNearestNeighbors(root, p, k, best)
 		for range k - 1 {
 			curr := heap.Pop(best).(spatial.NodeDistance[JunctionBox])
 			pair := NewJunctionBoxPair(p, curr.Node.Point)
