@@ -2,6 +2,7 @@ package main
 
 import (
 	"adventofcode2025/internal/mathutils"
+	"adventofcode2025/internal/refutils"
 	"adventofcode2025/internal/spatial"
 	"adventofcode2025/internal/unionfind"
 	"bufio"
@@ -121,14 +122,6 @@ func (h *CircuitMaxHeap) Pop() any {
 	return item
 }
 
-func toPointers(boxes []JunctionBox) []*JunctionBox {
-	result := make([]*JunctionBox, len(boxes))
-	for i := range boxes {
-		result[i] = &boxes[i]
-	}
-	return result
-}
-
 func main() {
 	if err := run(); err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -156,8 +149,7 @@ func run() error {
 		return err
 	}
 
-	pointPtrs := toPointers(points)
-	root := spatial.KDTree(pointPtrs, 0)
+	pointPtrs := refutils.ToPointers(points)
 	root := spatial.KDTree(pointPtrs)
 	closest := getClosestPairs(pointPtrs, root, k)
 	closestCopy := deepCopyValidHeap(closest)
