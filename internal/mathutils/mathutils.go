@@ -4,6 +4,13 @@ func Mod(a, b int) int {
 	return ((a % b) + b) % b
 }
 
+func Abs(a float64) float64 {
+	if a < 0 {
+		return -a
+	}
+	return a
+}
+
 func FloorDiv(a, b int) int {
 	if a%b == 0 {
 		return a / b
