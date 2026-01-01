@@ -30,7 +30,11 @@ type Node[T Point] struct {
 	RightChild *Node[T]
 }
 
-func KDTree[T Point](points []*T, depth int) *Node[T] {
+func KDTree[T Point](points []*T) *Node[T] {
+	return kDTree[T](points, 0)
+}
+
+func kDTree[T Point](points []*T, depth int) *Node[T] {
 	if len(points) == 0 {
 		return nil
 	}
@@ -45,8 +49,8 @@ func KDTree[T Point](points []*T, depth int) *Node[T] {
 
 	node := Node[T]{
 		Point:      points[median],
-		LeftChild:  KDTree[T](points[:median], depth+1),
-		RightChild: KDTree[T](points[median+1:], depth+1),
+		LeftChild:  kDTree[T](points[:median], depth+1),
+		RightChild: kDTree[T](points[median+1:], depth+1),
 	}
 
 	return &node
@@ -83,7 +87,11 @@ func (h *NodeDistMaxHeap[T]) Pop() any {
 	return item
 }
 
-func KNearestNeighbors[T Point](root *Node[T], target *T, k int, h *NodeDistMaxHeap[T], depth int) {
+func KNearestNeighbors[T Point](root *Node[T], target *T, k int, h *NodeDistMaxHeap[T]) {
+	kNearestNeighbors[T](root, target, k, h, 0)
+}
+
+func kNearestNeighbors[T Point](root *Node[T], target *T, k int, h *NodeDistMaxHeap[T], depth int) {
 	if root == nil {
 		return
 	}
@@ -108,13 +116,13 @@ func KNearestNeighbors[T Point](root *Node[T], target *T, k int, h *NodeDistMaxH
 		oppositeBranch = root.LeftChild
 	}
 
-	KNearestNeighbors[T](nextBranch, target, k, h, depth+1)
+	kNearestNeighbors[T](nextBranch, target, k, h, depth+1)
 
 	if axisDist < 0 {
 		axisDist = -axisDist
 	}
 
 	if h.Len() < k || axisDist < (*h)[0].Distance {
-		KNearestNeighbors[T](oppositeBranch, target, k, h, depth+1)
+		kNearestNeighbors[T](oppositeBranch, target, k, h, depth+1)
 	}
 }

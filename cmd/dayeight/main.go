@@ -158,6 +158,7 @@ func run() error {
 
 	pointPtrs := toPointers(points)
 	root := spatial.KDTree(pointPtrs, 0)
+	root := spatial.KDTree(pointPtrs)
 	closest := getClosestPairs(pointPtrs, root, k)
 	closestCopy := deepCopyValidHeap(closest)
 	connected := getConnected(conn, closestCopy)
@@ -257,7 +258,7 @@ func getClosestPairs(points []*JunctionBox, root *spatial.Node[JunctionBox], k i
 
 	for _, p := range points {
 		best := &spatial.NodeDistMaxHeap[JunctionBox]{}
-		spatial.KNearestNeighbors(root, p, k, best, 0)
+		spatial.KNearestNeighbors(root, p, k, best)
 		for range k - 1 {
 			curr := heap.Pop(best).(spatial.NodeDistance[JunctionBox])
 			pair := NewJunctionBoxPair(p, curr.Node.Point)
