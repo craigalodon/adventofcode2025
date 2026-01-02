@@ -3,7 +3,6 @@ package main
 import (
 	"adventofcode2025/internal/mathutils"
 	"adventofcode2025/internal/refutils"
-	"adventofcode2025/internal/spatial"
 	"bufio"
 	"fmt"
 	"os"
@@ -33,16 +32,159 @@ func (t Tile) ForEachCoordinate(fn func(dimension int, value float64)) {
 	fn(1, t.Y)
 }
 
-func (t Tile) SharesAxisWith(other Tile) bool {
-	return t.X == other.X || t.Y == other.Y
-}
-
 func (t Tile) String() string {
 	return fmt.Sprintf("(%f, %f)", t.X, t.Y)
 }
 
-func (t Tile) FormRectangle(other Tile) float64 {
+func (t Tile) ComputeArea(other Tile) float64 {
 	return (mathutils.Abs(t.X-other.X) + 1) * (mathutils.Abs(t.Y-other.Y) + 1)
+}
+
+func (t Tile) IsBetweenX(lo, hi Tile) bool {
+	return t.X > lo.X && t.X < hi.X
+}
+
+func (t Tile) IsBetweenY(lo, hi Tile) bool {
+	return t.Y > lo.Y && t.Y < hi.Y
+}
+
+func (t Tile) IsLeftOf(other Tile) bool {
+	return t.X <= other.X
+}
+
+func (t Tile) IsRightOf(other Tile) bool {
+	return t.X >= other.X
+}
+
+func (t Tile) IsBelow(other Tile) bool {
+	return t.Y <= other.Y
+}
+
+func (t Tile) IsAbove(other Tile) bool {
+	return t.Y >= other.Y
+}
+
+type Node struct {
+	Tile *Tile
+	Next *Node
+}
+
+func NewNode(tile *Tile) *Node {
+	return &Node{Tile: tile}
+}
+
+func (n *Node) ValidRectangle(other *Node) bool {
+
+	if n.Next == other {
+		return true
+	}
+
+	right := other.Tile.IsRightOf(*n.Tile)
+	above := other.Tile.IsAbove(*n.Tile)
+
+	curr := n.Next
+
+	for curr != n {
+		if curr == other {
+			curr = curr.Next
+			continue
+		}
+
+		if right && above {
+			if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) && curr.Tile.IsBetweenY(*n.Tile, *other.Tile) {
+				return false
+			}
+
+			if curr.Next == other {
+				goto Proceed
+			}
+
+			if curr.Next.Tile.Y == curr.Tile.Y {
+				if curr.Tile.IsBetweenY(*n.Tile, *other.Tile) && curr.Tile.IsRightOf(*other.Tile) && curr.Next.Tile.IsLeftOf(*n.Tile) {
+					return false
+				} else if curr.Tile.IsBetweenY(*n.Tile, *other.Tile) && curr.Tile.IsLeftOf(*n.Tile) && curr.Next.Tile.IsRightOf(*other.Tile) {
+					return false
+				}
+			} else {
+				if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) && curr.Tile.IsAbove(*other.Tile) && curr.Next.Tile.IsBelow(*n.Tile) {
+					return false
+				} else if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) && curr.Tile.IsBelow(*n.Tile) && curr.Next.Tile.IsAbove(*other.Tile) {
+					return false
+				}
+			}
+		} else if right {
+			if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) && curr.Tile.IsBetweenY(*other.Tile, *n.Tile) {
+				return false
+			}
+
+			if curr.Next == other {
+				goto Proceed
+			}
+
+			if curr.Next.Tile.Y == curr.Tile.Y {
+				if curr.Tile.IsBetweenY(*other.Tile, *n.Tile) && curr.Tile.IsRightOf(*other.Tile) && curr.Next.Tile.IsLeftOf(*n.Tile) {
+					return false
+				} else if curr.Tile.IsBetweenY(*other.Tile, *n.Tile) && curr.Tile.IsLeftOf(*n.Tile) && curr.Next.Tile.IsRightOf(*other.Tile) {
+					return false
+				}
+			} else {
+				if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) && curr.Tile.IsAbove(*n.Tile) && curr.Next.Tile.IsBelow(*other.Tile) {
+					return false
+				} else if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) && curr.Tile.IsBelow(*other.Tile) && curr.Next.Tile.IsAbove(*n.Tile) {
+					return false
+				}
+			}
+		} else if above {
+			if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) && curr.Tile.IsBetweenY(*n.Tile, *other.Tile) {
+				return false
+			}
+
+			if curr.Next == other {
+				goto Proceed
+			}
+
+			if curr.Next.Tile.Y == curr.Tile.Y {
+				if curr.Tile.IsBetweenY(*n.Tile, *other.Tile) && curr.Tile.IsRightOf(*n.Tile) && curr.Next.Tile.IsLeftOf(*other.Tile) {
+					return false
+				} else if curr.Tile.IsBetweenY(*n.Tile, *other.Tile) && curr.Tile.IsLeftOf(*other.Tile) && curr.Next.Tile.IsRightOf(*n.Tile) {
+					return false
+				}
+			} else {
+				if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) && curr.Tile.IsAbove(*other.Tile) && curr.Next.Tile.IsBelow(*n.Tile) {
+					return false
+				} else if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) && curr.Tile.IsBelow(*n.Tile) && curr.Next.Tile.IsAbove(*other.Tile) {
+					return false
+				}
+			}
+		} else {
+			if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) && curr.Tile.IsBetweenY(*other.Tile, *n.Tile) {
+				return false
+			}
+
+			if curr.Next == other {
+				goto Proceed
+			}
+
+			if curr.Next.Tile.Y == curr.Tile.Y {
+				if curr.Tile.IsBetweenY(*other.Tile, *n.Tile) && curr.Tile.IsRightOf(*n.Tile) && curr.Next.Tile.IsLeftOf(*other.Tile) {
+					return false
+				} else if curr.Tile.IsBetweenY(*other.Tile, *n.Tile) && curr.Tile.IsLeftOf(*other.Tile) && curr.Next.Tile.IsRightOf(*n.Tile) {
+					return false
+				}
+			} else {
+				if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) && curr.Tile.IsAbove(*n.Tile) && curr.Next.Tile.IsBelow(*other.Tile) {
+					return false
+				} else if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) && curr.Tile.IsBelow(*other.Tile) && curr.Next.Tile.IsAbove(*n.Tile) {
+					return false
+				}
+			}
+		}
+
+	Proceed:
+		curr = curr.Next
+	}
+
+	return true
 }
 
 func main() {
@@ -53,9 +195,11 @@ func main() {
 }
 
 func run() error {
-	if len(os.Args) < 2 {
-		return fmt.Errorf("usage: go run . <path/to/input/file>")
+	if len(os.Args) < 3 {
+		return fmt.Errorf("usage: go run . <path/to/input/file> <constrain>")
 	}
+
+	constrain := os.Args[2] == "true"
 
 	points, err := readPointsFromFile(os.Args[1])
 	if err != nil {
@@ -63,30 +207,42 @@ func run() error {
 	}
 
 	pointPtrs := refutils.ToPointers(points)
+	nodes := buildLinkedList(pointPtrs)
+	area := findLargestRectangle(nodes, constrain)
 
-	m := 0.0
-	var m1 Tile
-	var m2 Tile
+	fmt.Printf("The area of the largest rectange is %d\n", int(area))
 
-	for i := 0; i < len(pointPtrs); i++ {
-		for j := i + 1; j < len(pointPtrs); j++ {
-			if pointPtrs[i].SharesAxisWith(*pointPtrs[j]) {
-				continue
-			}
-			delta := spatial.Distance(pointPtrs[i], pointPtrs[j])
-			if delta > m {
-				m = delta
-				m1 = *pointPtrs[i]
-				m2 = *pointPtrs[j]
+	return nil
+}
+
+func findLargestRectangle(nodes []*Node, constrain bool) float64 {
+	best := 0.0
+
+	for i := 0; i < len(nodes); i++ {
+		for j := i + 1; j < len(nodes); j++ {
+			delta := nodes[i].Tile.ComputeArea(*nodes[j].Tile)
+			if delta > best {
+				if !constrain || nodes[i].ValidRectangle(nodes[j]) {
+					best = delta
+				}
 			}
 		}
 	}
+	return best
+}
 
-	area := m1.FormRectangle(m2)
+func buildLinkedList(pointPtrs []*Tile) []*Node {
 
-	fmt.Printf("Area: %f\n", area)
+	nodes := make([]*Node, len(pointPtrs))
+	for i, curr := range pointPtrs {
+		nodes[i] = NewNode(curr)
+		if i > 0 {
+			nodes[i-1].Next = nodes[i]
+		}
+	}
+	nodes[len(nodes)-1].Next = nodes[0]
 
-	return nil
+	return nodes
 }
 
 func readPointsFromFile(path string) ([]Tile, error) {
