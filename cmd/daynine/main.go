@@ -14,7 +14,6 @@ type Tile struct {
 }
 
 func (t Tile) GetValue(depth int) float64 {
-
 	axis := mathutils.Mod(depth, 2)
 
 	switch axis {
@@ -23,7 +22,7 @@ func (t Tile) GetValue(depth int) float64 {
 	case 1:
 		return t.Y
 	default:
-		panic("Invalid axis value")
+		panic(fmt.Sprintf("invalid axis: %d", axis))
 	}
 }
 
@@ -93,88 +92,72 @@ func (n *Node) ValidRectangle(other *Node) bool {
 		if right && above {
 			if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) && curr.Tile.IsBetweenY(*n.Tile, *other.Tile) {
 				return false
-			}
-
-			if curr.Next == other {
+			} else if curr.Next == other {
 				goto Proceed
-			}
-
-			if curr.Next.Tile.Y == curr.Tile.Y {
-				if curr.Tile.IsBetweenY(*n.Tile, *other.Tile) && curr.Tile.IsRightOf(*other.Tile) && curr.Next.Tile.IsLeftOf(*n.Tile) {
+			} else if curr.Next.Tile.Y == curr.Tile.Y && curr.Tile.IsBetweenY(*n.Tile, *other.Tile) {
+				if curr.Tile.IsRightOf(*other.Tile) && curr.Next.Tile.IsLeftOf(*n.Tile) {
 					return false
-				} else if curr.Tile.IsBetweenY(*n.Tile, *other.Tile) && curr.Tile.IsLeftOf(*n.Tile) && curr.Next.Tile.IsRightOf(*other.Tile) {
+				} else if curr.Tile.IsLeftOf(*n.Tile) && curr.Next.Tile.IsRightOf(*other.Tile) {
 					return false
 				}
-			} else {
-				if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) && curr.Tile.IsAbove(*other.Tile) && curr.Next.Tile.IsBelow(*n.Tile) {
+			} else if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) {
+				if curr.Tile.IsAbove(*other.Tile) && curr.Next.Tile.IsBelow(*n.Tile) {
 					return false
-				} else if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) && curr.Tile.IsBelow(*n.Tile) && curr.Next.Tile.IsAbove(*other.Tile) {
+				} else if curr.Tile.IsBelow(*n.Tile) && curr.Next.Tile.IsAbove(*other.Tile) {
 					return false
 				}
 			}
 		} else if right {
 			if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) && curr.Tile.IsBetweenY(*other.Tile, *n.Tile) {
 				return false
-			}
-
-			if curr.Next == other {
+			} else if curr.Next == other {
 				goto Proceed
-			}
-
-			if curr.Next.Tile.Y == curr.Tile.Y {
-				if curr.Tile.IsBetweenY(*other.Tile, *n.Tile) && curr.Tile.IsRightOf(*other.Tile) && curr.Next.Tile.IsLeftOf(*n.Tile) {
+			} else if curr.Next.Tile.Y == curr.Tile.Y && curr.Tile.IsBetweenY(*other.Tile, *n.Tile) {
+				if curr.Tile.IsRightOf(*other.Tile) && curr.Next.Tile.IsLeftOf(*n.Tile) {
 					return false
-				} else if curr.Tile.IsBetweenY(*other.Tile, *n.Tile) && curr.Tile.IsLeftOf(*n.Tile) && curr.Next.Tile.IsRightOf(*other.Tile) {
+				} else if curr.Tile.IsLeftOf(*n.Tile) && curr.Next.Tile.IsRightOf(*other.Tile) {
 					return false
 				}
-			} else {
-				if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) && curr.Tile.IsAbove(*n.Tile) && curr.Next.Tile.IsBelow(*other.Tile) {
+			} else if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) {
+				if curr.Tile.IsAbove(*n.Tile) && curr.Next.Tile.IsBelow(*other.Tile) {
 					return false
-				} else if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) && curr.Tile.IsBelow(*other.Tile) && curr.Next.Tile.IsAbove(*n.Tile) {
+				} else if curr.Tile.IsBelow(*other.Tile) && curr.Next.Tile.IsAbove(*n.Tile) {
 					return false
 				}
 			}
 		} else if above {
 			if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) && curr.Tile.IsBetweenY(*n.Tile, *other.Tile) {
 				return false
-			}
-
-			if curr.Next == other {
+			} else if curr.Next == other {
 				goto Proceed
-			}
-
-			if curr.Next.Tile.Y == curr.Tile.Y {
-				if curr.Tile.IsBetweenY(*n.Tile, *other.Tile) && curr.Tile.IsRightOf(*n.Tile) && curr.Next.Tile.IsLeftOf(*other.Tile) {
+			} else if curr.Next.Tile.Y == curr.Tile.Y && curr.Tile.IsBetweenY(*n.Tile, *other.Tile) {
+				if curr.Tile.IsRightOf(*n.Tile) && curr.Next.Tile.IsLeftOf(*other.Tile) {
 					return false
-				} else if curr.Tile.IsBetweenY(*n.Tile, *other.Tile) && curr.Tile.IsLeftOf(*other.Tile) && curr.Next.Tile.IsRightOf(*n.Tile) {
+				} else if curr.Tile.IsLeftOf(*other.Tile) && curr.Next.Tile.IsRightOf(*n.Tile) {
 					return false
 				}
-			} else {
-				if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) && curr.Tile.IsAbove(*other.Tile) && curr.Next.Tile.IsBelow(*n.Tile) {
+			} else if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) {
+				if curr.Tile.IsAbove(*other.Tile) && curr.Next.Tile.IsBelow(*n.Tile) {
 					return false
-				} else if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) && curr.Tile.IsBelow(*n.Tile) && curr.Next.Tile.IsAbove(*other.Tile) {
+				} else if curr.Tile.IsBelow(*n.Tile) && curr.Next.Tile.IsAbove(*other.Tile) {
 					return false
 				}
 			}
 		} else {
 			if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) && curr.Tile.IsBetweenY(*other.Tile, *n.Tile) {
 				return false
-			}
-
-			if curr.Next == other {
+			} else if curr.Next == other {
 				goto Proceed
-			}
-
-			if curr.Next.Tile.Y == curr.Tile.Y {
-				if curr.Tile.IsBetweenY(*other.Tile, *n.Tile) && curr.Tile.IsRightOf(*n.Tile) && curr.Next.Tile.IsLeftOf(*other.Tile) {
+			} else if curr.Next.Tile.Y == curr.Tile.Y && curr.Tile.IsBetweenY(*other.Tile, *n.Tile) {
+				if curr.Tile.IsRightOf(*n.Tile) && curr.Next.Tile.IsLeftOf(*other.Tile) {
 					return false
-				} else if curr.Tile.IsBetweenY(*other.Tile, *n.Tile) && curr.Tile.IsLeftOf(*other.Tile) && curr.Next.Tile.IsRightOf(*n.Tile) {
+				} else if curr.Tile.IsLeftOf(*other.Tile) && curr.Next.Tile.IsRightOf(*n.Tile) {
 					return false
 				}
-			} else {
-				if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) && curr.Tile.IsAbove(*n.Tile) && curr.Next.Tile.IsBelow(*other.Tile) {
+			} else if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) {
+				if curr.Tile.IsAbove(*n.Tile) && curr.Next.Tile.IsBelow(*other.Tile) {
 					return false
-				} else if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) && curr.Tile.IsBelow(*other.Tile) && curr.Next.Tile.IsAbove(*n.Tile) {
+				} else if curr.Tile.IsBelow(*other.Tile) && curr.Next.Tile.IsAbove(*n.Tile) {
 					return false
 				}
 			}
