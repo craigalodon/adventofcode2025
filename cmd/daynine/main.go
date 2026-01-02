@@ -1,10 +1,10 @@
 package main
 
 import (
-	"adventofcode2025/internal/mathutils"
 	"adventofcode2025/internal/refutils"
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 )
 
@@ -13,54 +13,8 @@ type Tile struct {
 	Y float64
 }
 
-func (t Tile) GetValue(depth int) float64 {
-	axis := mathutils.Mod(depth, 2)
-
-	switch axis {
-	case 0:
-		return t.X
-	case 1:
-		return t.Y
-	default:
-		panic(fmt.Sprintf("invalid axis: %d", axis))
-	}
-}
-
-func (t Tile) ForEachCoordinate(fn func(dimension int, value float64)) {
-	fn(0, t.X)
-	fn(1, t.Y)
-}
-
-func (t Tile) String() string {
-	return fmt.Sprintf("(%f, %f)", t.X, t.Y)
-}
-
-func (t Tile) ComputeArea(other Tile) float64 {
-	return (mathutils.Abs(t.X-other.X) + 1) * (mathutils.Abs(t.Y-other.Y) + 1)
-}
-
-func (t Tile) IsBetweenX(lo, hi Tile) bool {
-	return t.X > lo.X && t.X < hi.X
-}
-
-func (t Tile) IsBetweenY(lo, hi Tile) bool {
-	return t.Y > lo.Y && t.Y < hi.Y
-}
-
-func (t Tile) IsLeftOf(other Tile) bool {
-	return t.X <= other.X
-}
-
-func (t Tile) IsRightOf(other Tile) bool {
-	return t.X >= other.X
-}
-
-func (t Tile) IsBelow(other Tile) bool {
-	return t.Y <= other.Y
-}
-
-func (t Tile) IsAbove(other Tile) bool {
-	return t.Y >= other.Y
+func (t Tile) computeArea(other Tile) float64 {
+	return (math.Abs(t.X-other.X) + 1) * (math.Abs(t.Y-other.Y) + 1)
 }
 
 type Node struct {
@@ -72,15 +26,59 @@ func NewNode(tile *Tile) *Node {
 	return &Node{Tile: tile}
 }
 
-func (n *Node) ValidRectangle(other *Node) bool {
+type rectBounds struct {
+	xLo float64
+	xHi float64
+	yLo float64
+	yHi float64
+}
+
+func newRectBounds(a, b Tile) rectBounds {
+	xLo, xHi := a.X, b.X
+	if xLo > xHi {
+		xLo, xHi = xHi, xLo
+	}
+
+	yLo, yHi := a.Y, b.Y
+	if yLo > yHi {
+		yLo, yHi = yHi, yLo
+	}
+
+	return rectBounds{
+		xLo: xLo,
+		xHi: xHi,
+		yLo: yLo,
+		yHi: yHi,
+	}
+}
+
+func (r rectBounds) contains(t *Tile) bool {
+	return t.X > r.xLo && t.X < r.xHi && t.Y > r.yLo && t.Y < r.yHi
+}
+
+func (r rectBounds) crossesHorizontally(curr, next *Tile) bool {
+	if curr.Y <= r.yLo || curr.Y >= r.yHi {
+		return false
+	}
+
+	return (curr.X >= r.xHi && next.X <= r.xLo) || (curr.X <= r.xLo && next.X >= r.xHi)
+}
+
+func (r rectBounds) crossesVertically(curr, next *Tile) bool {
+	if curr.X <= r.xLo || curr.X >= r.xHi {
+		return false
+	}
+
+	return (curr.Y >= r.yHi && next.Y <= r.yLo) || (curr.Y <= r.yLo && next.Y >= r.yHi)
+}
+
+func (n *Node) formsValidRectangleWith(other *Node) bool {
 
 	if n.Next == other {
 		return true
 	}
 
-	right := other.Tile.IsRightOf(*n.Tile)
-	above := other.Tile.IsAbove(*n.Tile)
-
+	bounds := newRectBounds(*n.Tile, *other.Tile)
 	curr := n.Next
 
 	for curr != n {
@@ -89,81 +87,23 @@ func (n *Node) ValidRectangle(other *Node) bool {
 			continue
 		}
 
-		if right && above {
-			if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) && curr.Tile.IsBetweenY(*n.Tile, *other.Tile) {
-				return false
-			} else if curr.Next == other {
-				goto Proceed
-			} else if curr.Next.Tile.Y == curr.Tile.Y && curr.Tile.IsBetweenY(*n.Tile, *other.Tile) {
-				if curr.Tile.IsRightOf(*other.Tile) && curr.Next.Tile.IsLeftOf(*n.Tile) {
-					return false
-				} else if curr.Tile.IsLeftOf(*n.Tile) && curr.Next.Tile.IsRightOf(*other.Tile) {
-					return false
-				}
-			} else if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) {
-				if curr.Tile.IsAbove(*other.Tile) && curr.Next.Tile.IsBelow(*n.Tile) {
-					return false
-				} else if curr.Tile.IsBelow(*n.Tile) && curr.Next.Tile.IsAbove(*other.Tile) {
-					return false
-				}
-			}
-		} else if right {
-			if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) && curr.Tile.IsBetweenY(*other.Tile, *n.Tile) {
-				return false
-			} else if curr.Next == other {
-				goto Proceed
-			} else if curr.Next.Tile.Y == curr.Tile.Y && curr.Tile.IsBetweenY(*other.Tile, *n.Tile) {
-				if curr.Tile.IsRightOf(*other.Tile) && curr.Next.Tile.IsLeftOf(*n.Tile) {
-					return false
-				} else if curr.Tile.IsLeftOf(*n.Tile) && curr.Next.Tile.IsRightOf(*other.Tile) {
-					return false
-				}
-			} else if curr.Tile.IsBetweenX(*n.Tile, *other.Tile) {
-				if curr.Tile.IsAbove(*n.Tile) && curr.Next.Tile.IsBelow(*other.Tile) {
-					return false
-				} else if curr.Tile.IsBelow(*other.Tile) && curr.Next.Tile.IsAbove(*n.Tile) {
-					return false
-				}
-			}
-		} else if above {
-			if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) && curr.Tile.IsBetweenY(*n.Tile, *other.Tile) {
-				return false
-			} else if curr.Next == other {
-				goto Proceed
-			} else if curr.Next.Tile.Y == curr.Tile.Y && curr.Tile.IsBetweenY(*n.Tile, *other.Tile) {
-				if curr.Tile.IsRightOf(*n.Tile) && curr.Next.Tile.IsLeftOf(*other.Tile) {
-					return false
-				} else if curr.Tile.IsLeftOf(*other.Tile) && curr.Next.Tile.IsRightOf(*n.Tile) {
-					return false
-				}
-			} else if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) {
-				if curr.Tile.IsAbove(*other.Tile) && curr.Next.Tile.IsBelow(*n.Tile) {
-					return false
-				} else if curr.Tile.IsBelow(*n.Tile) && curr.Next.Tile.IsAbove(*other.Tile) {
-					return false
-				}
-			}
-		} else {
-			if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) && curr.Tile.IsBetweenY(*other.Tile, *n.Tile) {
-				return false
-			} else if curr.Next == other {
-				goto Proceed
-			} else if curr.Next.Tile.Y == curr.Tile.Y && curr.Tile.IsBetweenY(*other.Tile, *n.Tile) {
-				if curr.Tile.IsRightOf(*n.Tile) && curr.Next.Tile.IsLeftOf(*other.Tile) {
-					return false
-				} else if curr.Tile.IsLeftOf(*other.Tile) && curr.Next.Tile.IsRightOf(*n.Tile) {
-					return false
-				}
-			} else if curr.Tile.IsBetweenX(*other.Tile, *n.Tile) {
-				if curr.Tile.IsAbove(*n.Tile) && curr.Next.Tile.IsBelow(*other.Tile) {
-					return false
-				} else if curr.Tile.IsBelow(*other.Tile) && curr.Next.Tile.IsAbove(*n.Tile) {
-					return false
-				}
-			}
+		if bounds.contains(curr.Tile) {
+			return false
 		}
 
-	Proceed:
+		if curr.Next == other {
+			curr = curr.Next
+			continue
+		}
+
+		if bounds.crossesHorizontally(curr.Tile, curr.Next.Tile) {
+			return false
+		}
+
+		if bounds.crossesVertically(curr.Tile, curr.Next.Tile) {
+			return false
+		}
+
 		curr = curr.Next
 	}
 
@@ -190,7 +130,7 @@ func run() error {
 	}
 
 	pointPtrs := refutils.ToPointers(points)
-	nodes := buildLinkedList(pointPtrs)
+	nodes := createNodeRing(pointPtrs)
 	area := findLargestRectangle(nodes, constrain)
 
 	fmt.Printf("The area of the largest rectange is %d\n", int(area))
@@ -203,9 +143,9 @@ func findLargestRectangle(nodes []*Node, constrain bool) float64 {
 
 	for i := 0; i < len(nodes); i++ {
 		for j := i + 1; j < len(nodes); j++ {
-			delta := nodes[i].Tile.ComputeArea(*nodes[j].Tile)
+			delta := nodes[i].Tile.computeArea(*nodes[j].Tile)
 			if delta > best {
-				if !constrain || nodes[i].ValidRectangle(nodes[j]) {
+				if !constrain || nodes[i].formsValidRectangleWith(nodes[j]) {
 					best = delta
 				}
 			}
@@ -214,7 +154,7 @@ func findLargestRectangle(nodes []*Node, constrain bool) float64 {
 	return best
 }
 
-func buildLinkedList(pointPtrs []*Tile) []*Node {
+func createNodeRing(pointPtrs []*Tile) []*Node {
 
 	nodes := make([]*Node, len(pointPtrs))
 	for i, curr := range pointPtrs {
