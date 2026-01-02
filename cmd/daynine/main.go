@@ -8,6 +8,8 @@ import (
 	"os"
 )
 
+const TWOPI = 2 * math.Pi
+
 type Tile struct {
 	X float64
 	Y float64
@@ -15,6 +17,44 @@ type Tile struct {
 
 func (t Tile) computeArea(other Tile) float64 {
 	return (math.Abs(t.X-other.X) + 1) * (math.Abs(t.Y-other.Y) + 1)
+}
+
+func (t Tile) angle(curr, next *Tile) float64 {
+
+	x1 := curr.X - t.X
+	y1 := curr.Y - t.Y
+	x2 := next.X - t.X
+	y2 := next.Y - t.Y
+
+	theta1 := math.Atan2(y1, x1)
+	theta2 := math.Atan2(y2, x2)
+	dtheta := theta2 - theta1
+
+	for dtheta > math.Pi {
+		dtheta -= TWOPI
+	}
+
+	for dtheta < -math.Pi {
+		dtheta += TWOPI
+	}
+
+	return dtheta
+}
+
+func (t Tile) pointOnAxisAlignedSegment(a, b *Tile) bool {
+	if a.X == b.X && t.X == a.X {
+		if a.Y < b.Y {
+			return t.Y >= a.Y && t.Y <= b.Y
+		}
+		return t.Y >= b.Y && t.Y <= a.Y
+	}
+	if a.Y == b.Y && t.Y == a.Y {
+		if a.X < b.X {
+			return t.X >= a.X && t.X <= b.X
+		}
+		return t.X >= b.X && t.X <= a.X
+	}
+	return false
 }
 
 type Node struct {
@@ -56,7 +96,7 @@ func (r rectBounds) contains(t *Tile) bool {
 	return t.X > r.xLo && t.X < r.xHi && t.Y > r.yLo && t.Y < r.yHi
 }
 
-func (r rectBounds) crossesHorizontally(curr, next *Tile) bool {
+func (r rectBounds) isCrossedHorizontally(curr, next *Tile) bool {
 	if curr.Y <= r.yLo || curr.Y >= r.yHi {
 		return false
 	}
@@ -64,12 +104,50 @@ func (r rectBounds) crossesHorizontally(curr, next *Tile) bool {
 	return (curr.X >= r.xHi && next.X <= r.xLo) || (curr.X <= r.xLo && next.X >= r.xHi)
 }
 
-func (r rectBounds) crossesVertically(curr, next *Tile) bool {
+func (r rectBounds) isCrossedVertically(curr, next *Tile) bool {
 	if curr.X <= r.xLo || curr.X >= r.xHi {
 		return false
 	}
 
 	return (curr.Y >= r.yHi && next.Y <= r.yLo) || (curr.Y <= r.yLo && next.Y >= r.yHi)
+}
+
+func (r rectBounds) edgeCrossesOrEnters(curr, next *Tile) bool {
+	if r.contains(curr) {
+		return true
+	}
+
+	if r.isCrossedHorizontally(curr, next) {
+		return true
+	}
+
+	return r.isCrossedVertically(curr, next)
+}
+
+func cornerInside(corner Tile, start *Node) bool {
+	const angleEps = 1e-7
+	angle := 0.0
+	onEdge := false
+
+	update := func(curr, next *Tile) {
+		if onEdge {
+			return
+		}
+		if corner.pointOnAxisAlignedSegment(curr, next) {
+			onEdge = true
+			return
+		}
+		angle += corner.angle(curr, next)
+	}
+
+	for curr := start; ; curr = curr.Next {
+		update(curr.Tile, curr.Next.Tile)
+		if curr.Next == start {
+			break
+		}
+	}
+
+	return onEdge || math.Abs(angle) > (TWOPI-angleEps)
 }
 
 func (n *Node) formsValidRectangleWith(other *Node) bool {
@@ -79,35 +157,23 @@ func (n *Node) formsValidRectangleWith(other *Node) bool {
 	}
 
 	bounds := newRectBounds(*n.Tile, *other.Tile)
-	curr := n.Next
 
-	for curr != n {
-		if curr == other {
-			curr = curr.Next
-			continue
+	a := Tile{X: n.Tile.X, Y: other.Tile.Y}
+	b := Tile{X: other.Tile.X, Y: n.Tile.Y}
+
+	for curr := n; ; curr = curr.Next {
+		if curr != n && curr != other && curr.Next != other {
+			if bounds.edgeCrossesOrEnters(curr.Tile, curr.Next.Tile) {
+				return false
+			}
 		}
 
-		if bounds.contains(curr.Tile) {
-			return false
+		if curr.Next == n {
+			break
 		}
-
-		if curr.Next == other {
-			curr = curr.Next
-			continue
-		}
-
-		if bounds.crossesHorizontally(curr.Tile, curr.Next.Tile) {
-			return false
-		}
-
-		if bounds.crossesVertically(curr.Tile, curr.Next.Tile) {
-			return false
-		}
-
-		curr = curr.Next
 	}
 
-	return true
+	return cornerInside(a, n) && cornerInside(b, n)
 }
 
 func main() {
