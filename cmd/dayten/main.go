@@ -105,7 +105,7 @@ func deserialize(s string) (*Machine, error) {
 		case ')':
 			if parserState == parenthesesOpened {
 				parserState = parenthesesClosed
-				res, err := builderToInt(builder)
+				res, err := tryBuilderToInt(builder)
 				if err != nil {
 					return nil, err
 				}
@@ -125,7 +125,7 @@ func deserialize(s string) (*Machine, error) {
 		case '}':
 			if parserState == curlyBracesOpened {
 				parserState = curlyBracesClosed
-				res, err := builderToInt(builder)
+				res, err := tryBuilderToInt(builder)
 				if err != nil {
 					return nil, err
 				}
@@ -142,7 +142,7 @@ func deserialize(s string) (*Machine, error) {
 		case ',':
 			switch parserState {
 			case parenthesesOpened:
-				res, err := builderToInt(builder)
+				res, err := tryBuilderToInt(builder)
 				if err != nil {
 					return nil, err
 				}
@@ -150,7 +150,7 @@ func deserialize(s string) (*Machine, error) {
 				button[res] = true
 				continue
 			case curlyBracesOpened:
-				res, err := builderToInt(builder)
+				res, err := tryBuilderToInt(builder)
 				if err != nil {
 					return nil, err
 				}
@@ -191,7 +191,7 @@ func deserialize(s string) (*Machine, error) {
 	}, nil
 }
 
-func builderToInt(b strings.Builder) (int, error) {
+func tryBuilderToInt(b strings.Builder) (int, error) {
 	s := b.String()
 	i, err := strconv.Atoi(s)
 	if err != nil {
