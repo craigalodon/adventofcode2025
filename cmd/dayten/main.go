@@ -49,7 +49,7 @@ func run() error {
 }
 
 type Machine struct {
-	indicators          []bool
+	indicators          int
 	buttons             []map[int]bool
 	joltageRequirements map[int]bool
 }
@@ -75,7 +75,7 @@ func deserialize(s string) (*Machine, error) {
 	parserState := null
 	var builder strings.Builder
 
-	indicators := make([]bool, 0)
+	indicators := 0
 
 	buttons := make([]map[int]bool, 0)
 	button := make(map[int]bool)
@@ -162,13 +162,13 @@ func deserialize(s string) (*Machine, error) {
 			}
 		case '.':
 			if parserState == bracketsOpened {
-				indicators = append(indicators, false)
+				indicators = indicators << 1
 				continue
 			}
 			return nil, fmt.Errorf("invalid character '.' at position %d", i)
 		case '#':
 			if parserState == bracketsOpened {
-				indicators = append(indicators, true)
+				indicators = (indicators << 1) | 1
 				continue
 			}
 			return nil, fmt.Errorf("invalid character '#' at position %d", i)

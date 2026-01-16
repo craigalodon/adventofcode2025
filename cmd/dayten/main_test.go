@@ -17,7 +17,7 @@ func TestDeserialize(t *testing.T) {
 			name:  "valid machine input",
 			input: "[#..#] (1,3) (2) (2,3) (0,2) (0,1) (3) {7,4,3,5}",
 			expected: &Machine{
-				indicators:          []bool{true, false, false, true},
+				indicators:          9,
 				buttons:             []map[int]bool{{1: true, 3: true}, {2: true}, {2: true, 3: true}, {0: true, 2: true}, {0: true, 1: true}, {3: true}},
 				joltageRequirements: map[int]bool{7: true, 4: true, 3: true, 5: true},
 			},
