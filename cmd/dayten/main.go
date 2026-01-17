@@ -69,19 +69,8 @@ func (m *Machine) configure() (int, error) {
 	var best *int
 
 	for i := 0; i <= combs; i++ {
-		curr := 0
-		presses := 0
-		j := 1
-		ptr := 0
-		for j <= i {
-			if i&j > 0 {
-				curr = press(curr, m.buttons[ptr])
-				presses++
-			}
-			j = j << 1
-			ptr++
-		}
-		if curr == m.configuration {
+		val, presses := getValPresses(i, m)
+		if val == m.configuration {
 			if best == nil || *best > presses {
 				best = &presses
 			}
@@ -93,6 +82,22 @@ func (m *Machine) configure() (int, error) {
 	}
 
 	return *best, nil
+}
+
+func getValPresses(comb int, m *Machine) (int, int) {
+	val := 0
+	presses := 0
+	ptr := 1
+	button := 0
+	for ptr <= comb {
+		if comb&ptr > 0 {
+			val = press(val, m.buttons[button])
+			presses++
+		}
+		ptr = ptr << 1
+		button++
+	}
+	return val, presses
 }
 
 func calcCombs(buttons int) int {
