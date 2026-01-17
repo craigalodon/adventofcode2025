@@ -67,14 +67,14 @@ func (m *Machine) configure() (int, error) {
 		curr := 0
 		presses := 0
 		j := 1
-		b := 0
+		ptr := 0
 		for j <= i {
 			if i&j > 0 {
-				curr = press(curr, m.buttons[b])
+				curr = press(curr, m.buttons[ptr])
 				presses++
 			}
 			j = j << 1
-			b++
+			ptr++
 		}
 		if curr == m.configuration {
 			if best == nil || *best > presses {
