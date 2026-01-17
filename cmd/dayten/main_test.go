@@ -17,8 +17,8 @@ func TestDeserialize(t *testing.T) {
 			name:  "valid machine input",
 			input: "[#..#] (1,3) (2) (2,3) (0,2) (0,1) (3) {7,4,3,5}",
 			expected: &Machine{
-				indicators:          9,
-				buttons:             []map[int]bool{{1: true, 3: true}, {2: true}, {2: true, 3: true}, {0: true, 2: true}, {0: true, 1: true}, {3: true}},
+				configuration:       9,
+				buttons:             []int{3, 4, 5, 8, 10, 12},
 				joltageRequirements: map[int]bool{7: true, 4: true, 3: true, 5: true},
 			},
 			err: nil,
@@ -63,6 +63,62 @@ func TestDeserialize(t *testing.T) {
 
 			if !reflect.DeepEqual(result, tt.expected) {
 				t.Errorf("deserialize() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestAddIndicator(t *testing.T) {
+	tests := []struct {
+		name      string
+		button    int
+		indicator int
+		expected  int
+	}{
+		{
+			name:      "button 0, indicator 1",
+			button:    0,
+			indicator: 1,
+			expected:  2,
+		},
+		{
+			name:      "button 0, indicator 2",
+			button:    0,
+			indicator: 2,
+			expected:  4,
+		},
+		{
+			name:      "button 1, indicator 1",
+			button:    1,
+			indicator: 1,
+			expected:  3,
+		},
+		{
+			name:      "button 1, indicator 2",
+			button:    1,
+			indicator: 2,
+			expected:  5,
+		},
+		{
+			name:      "button 2, indicator 1",
+			button:    2,
+			indicator: 1,
+			expected:  2,
+		},
+		{
+			name:      "button 2, indicator 2",
+			button:    2,
+			indicator: 2,
+			expected:  6,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := addIndicator(tt.button, tt.indicator)
+
+			if result != tt.expected {
+				t.Errorf("addIndicator() = %v, want %v", result, tt.expected)
 			}
 		})
 	}

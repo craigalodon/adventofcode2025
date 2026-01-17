@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -49,8 +50,8 @@ func run() error {
 }
 
 type Machine struct {
-	indicators          int
-	buttons             []map[int]bool
+	configuration       int
+	buttons             []int
 	joltageRequirements map[int]bool
 }
 
@@ -75,10 +76,10 @@ func deserialize(s string) (*Machine, error) {
 	parserState := started
 	var builder strings.Builder
 
-	indicators := 0
+	configuration := 0
 
-	buttons := make([]map[int]bool, 0)
-	button := make(map[int]bool)
+	buttons := make([]int, 0)
+	var button int
 
 	joltageRequirements := make(map[int]bool)
 
@@ -110,9 +111,13 @@ func deserialize(s string) (*Machine, error) {
 					return nil, err
 				}
 				builder.Reset()
-				button[res] = true
+				x := 1
+				for range res {
+					x = x << 1
+				}
+				button = button | x
 				buttons = append(buttons, button)
-				button = make(map[int]bool)
+				button = 0
 				continue
 			}
 			return nil, fmt.Errorf("invalid character ')' at position %d", i)
@@ -147,7 +152,7 @@ func deserialize(s string) (*Machine, error) {
 					return nil, err
 				}
 				builder.Reset()
-				button[res] = true
+				button = addIndicator(button, res)
 				continue
 			case curlyBracesOpened:
 				res, err := tryBuilderToInt(builder)
@@ -162,13 +167,13 @@ func deserialize(s string) (*Machine, error) {
 			}
 		case '.':
 			if parserState == bracketsOpened {
-				indicators = indicators << 1
+				configuration = configuration << 1
 				continue
 			}
 			return nil, fmt.Errorf("invalid character '.' at position %d", i)
 		case '#':
 			if parserState == bracketsOpened {
-				indicators = (indicators << 1) | 1
+				configuration = (configuration << 1) | 1
 				continue
 			}
 			return nil, fmt.Errorf("invalid character '#' at position %d", i)
@@ -184,8 +189,10 @@ func deserialize(s string) (*Machine, error) {
 		}
 	}
 
+	slices.Sort(buttons)
+
 	return &Machine{
-		indicators:          indicators,
+		configuration:       configuration,
 		buttons:             buttons,
 		joltageRequirements: joltageRequirements,
 	}, nil
@@ -198,4 +205,12 @@ func tryBuilderToInt(b strings.Builder) (int, error) {
 		return 0, err
 	}
 	return i, nil
+}
+
+func addIndicator(button, indicator int) int {
+	x := 1
+	for range indicator {
+		x = x << 1
+	}
+	return button | x
 }
