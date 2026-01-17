@@ -53,9 +53,9 @@ func run() error {
 }
 
 type Machine struct {
-	configuration       int
-	buttons             []int
-	joltageRequirements map[int]bool
+	configuration int
+	buttons       []int
+	joltage       []int
 }
 
 func (m *Machine) jolt() (int, error) {
@@ -132,7 +132,7 @@ func deserialize(s string) (*Machine, error) {
 	buttons := make([]int, 0)
 	var button int
 
-	joltageRequirements := make(map[int]bool)
+	joltage := make([]int, 0)
 
 	for i, r := range s {
 		switch r {
@@ -182,7 +182,7 @@ func deserialize(s string) (*Machine, error) {
 					return nil, err
 				}
 				builder.Reset()
-				joltageRequirements[res] = true
+				joltage = append(joltage, res)
 				continue
 			}
 			return nil, fmt.Errorf("invalid character '{' at position %d", i)
@@ -207,7 +207,7 @@ func deserialize(s string) (*Machine, error) {
 					return nil, err
 				}
 				builder.Reset()
-				joltageRequirements[res] = true
+				joltage = append(joltage, res)
 				continue
 			default:
 				return nil, fmt.Errorf("invalid character ',' at position %d", i)
@@ -238,9 +238,9 @@ func deserialize(s string) (*Machine, error) {
 	}
 
 	return &Machine{
-		configuration:       configuration,
-		buttons:             buttons,
-		joltageRequirements: joltageRequirements,
+		configuration: configuration,
+		buttons:       buttons,
+		joltage:       joltage,
 	}, nil
 }
 
