@@ -137,26 +137,48 @@ func TestAddIndicator(t *testing.T) {
 	}
 }
 
-func TestConfigure(t *testing.T) {
+func TestGivenExamples(t *testing.T) {
 	tests := []struct {
 		name     string
 		idx      int
 		expected int
+		callback func(*Machine) (int, error)
 	}{
 		{
-			name:     "Example 1",
+			name:     "Example 1 - Configure",
 			idx:      0,
 			expected: 2,
+			callback: func(m *Machine) (int, error) { return m.configure() },
 		},
 		{
-			name:     "Example 2",
+			name:     "Example 2 - Configure",
 			idx:      1,
 			expected: 3,
+			callback: func(m *Machine) (int, error) { return m.configure() },
 		},
 		{
-			name:     "Example 3",
+			name:     "Example 3 - Configure",
 			idx:      2,
 			expected: 2,
+			callback: func(m *Machine) (int, error) { return m.configure() },
+		},
+		{
+			name:     "Example 1 - Jolt",
+			idx:      0,
+			expected: 10,
+			callback: func(m *Machine) (int, error) { return m.jolt() },
+		},
+		{
+			name:     "Example 2 - Jolt",
+			idx:      1,
+			expected: 12,
+			callback: func(m *Machine) (int, error) { return m.jolt() },
+		},
+		{
+			name:     "Example 3 - Jolt",
+			idx:      2,
+			expected: 11,
+			callback: func(m *Machine) (int, error) { return m.jolt() },
 		},
 	}
 
@@ -171,7 +193,7 @@ func TestConfigure(t *testing.T) {
 		}
 	}()
 
-	machines := make([]Machine, 0)
+	machines := make([]*Machine, 0)
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -179,18 +201,18 @@ func TestConfigure(t *testing.T) {
 		if err != nil {
 			t.Fatalf("error deserializing: %v", err)
 		}
-		machines = append(machines, *machine)
+		machines = append(machines, machine)
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			machine := machines[tt.idx]
-			presses, err := machine.configure()
+			presses, err := tt.callback(machine)
 			if err != nil {
-				t.Fatalf("error configuring machine: %v", err)
+				t.Fatalf("error applying callback: %v", err)
 			}
 			if presses != tt.expected {
-				t.Errorf("configure() = %v, want %v", presses, tt.expected)
+				t.Errorf("callback() = %v, want %v", presses, tt.expected)
 			}
 		})
 	}

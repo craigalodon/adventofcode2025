@@ -58,6 +58,11 @@ type Machine struct {
 	joltageRequirements map[int]bool
 }
 
+func (m *Machine) jolt() (int, error) {
+	// TODO: Implement solution
+	return 0, nil
+}
+
 func (m *Machine) configure() (int, error) {
 
 	combs := calcCombs(len(m.buttons))
