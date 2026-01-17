@@ -176,3 +176,58 @@ func TestConfigure(t *testing.T) {
 		})
 	}
 }
+
+func TestPress(t *testing.T) {
+	tests := []struct {
+		name     string
+		curr     int
+		button   int
+		expected int
+	}{
+		{
+			name:     "curr 0, button 0",
+			curr:     0,
+			button:   0,
+			expected: 0,
+		},
+		{
+			name:     "curr 0, button 1",
+			curr:     0,
+			button:   1,
+			expected: 1,
+		},
+		{
+			name:     "curr 1, button 1",
+			curr:     1,
+			button:   1,
+			expected: 0,
+		},
+		{
+			name:     "curr 1, button 2",
+			curr:     1,
+			button:   2,
+			expected: 3,
+		},
+		{
+			name:     "curr 2, button 2",
+			curr:     2,
+			button:   2,
+			expected: 0,
+		},
+		{
+			name:     "curr 2, button 3",
+			curr:     2,
+			button:   3,
+			expected: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := press(tt.curr, tt.button)
+			if result != tt.expected {
+				t.Errorf("press() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}

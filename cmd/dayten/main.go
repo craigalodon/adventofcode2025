@@ -56,6 +56,7 @@ type Machine struct {
 }
 
 func (m *Machine) configure() int {
+	// TODO: Solve the actual problem
 	return 1
 }
 
@@ -214,4 +215,8 @@ func addIndicator(button, indicator int) int {
 		x = x << 1
 	}
 	return button | x
+}
+
+func press(curr, button int) int {
+	return (curr | button) ^ (curr & button)
 }
