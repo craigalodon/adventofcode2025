@@ -63,10 +63,6 @@ func (m *Machine) configure() (int, error) {
 	combs := calcCombs(len(m.buttons))
 	var best *int
 
-	/*
-
-	 */
-
 	for i := 0; i <= combs; i++ {
 		curr := 0
 		presses := 0
