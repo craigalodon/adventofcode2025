@@ -190,6 +190,7 @@ func deserialize(s string) (*Machine, error) {
 	}
 
 	slices.Sort(buttons)
+	slices.Reverse(buttons)
 
 	return &Machine{
 		configuration:       configuration,
