@@ -156,11 +156,7 @@ func deserialize(s string) (*Machine, error) {
 					return nil, err
 				}
 				builder.Reset()
-				x := 1
-				for range res {
-					x = x << 1
-				}
-				button = button | x
+				button = addIndicator(button, res)
 				buttons = append(buttons, button)
 				button = 0
 				continue
