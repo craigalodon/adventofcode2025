@@ -21,7 +21,7 @@ func TestDeserialize(t *testing.T) {
 			input: "[#..#] (1,3) (2) (2,3) (0,2) (0,1) (3) {7,4,3,5}",
 			expected: &Machine{
 				configuration:       9,
-				buttons:             []int{12, 10, 8, 5, 4, 3},
+				buttons:             []int{10, 4, 12, 5, 3, 8},
 				joltageRequirements: map[int]bool{7: true, 4: true, 3: true, 5: true},
 			},
 			err: nil,
@@ -49,6 +49,16 @@ func TestDeserialize(t *testing.T) {
 			input:    "[#..#] (1,,3) (2) (2,3) (0,2) (0,1) (3) {7,4,3,5}",
 			expected: nil,
 			err:      errors.New("strconv.Atoi: parsing \"\": invalid syntax"),
+		},
+		{
+			name:  "non-palindromic configuration",
+			input: "[.#.#] (1,3) (2) (2,3) (0,2) (0,1) (3) {7,4,3,5}",
+			expected: &Machine{
+				configuration:       10,
+				buttons:             []int{10, 4, 12, 5, 3, 8},
+				joltageRequirements: map[int]bool{7: true, 4: true, 3: true, 5: true},
+			},
+			err: nil,
 		},
 	}
 
@@ -129,20 +139,23 @@ func TestAddIndicator(t *testing.T) {
 
 func TestConfigure(t *testing.T) {
 	tests := []struct {
-		name       string
-		serialized string
-		expected   int
+		name     string
+		idx      int
+		expected int
 	}{
 		{
 			name:     "Example 1",
+			idx:      0,
 			expected: 2,
 		},
 		{
 			name:     "Example 2",
+			idx:      1,
 			expected: 3,
 		},
 		{
 			name:     "Example 3",
+			idx:      2,
 			expected: 2,
 		},
 	}
@@ -158,20 +171,26 @@ func TestConfigure(t *testing.T) {
 		}
 	}()
 
+	machines := make([]Machine, 0)
+
 	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		machine, err := deserialize(scanner.Text())
+		if err != nil {
+			t.Fatalf("error deserializing: %v", err)
+		}
+		machines = append(machines, *machine)
+	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if !scanner.Scan() {
-				t.Fatalf("unexpected end of file")
-			}
-			machine, err := deserialize(scanner.Text())
+			machine := machines[tt.idx]
+			presses, err := machine.configure()
 			if err != nil {
-				t.Fatalf("deserialize() error = %v", err)
+				t.Fatalf("error configuring machine: %v", err)
 			}
-			result := machine.configure()
-			if result != tt.expected {
-				t.Errorf("configure() = %v, want %v", result, tt.expected)
+			if presses != tt.expected {
+				t.Errorf("configure() = %v, want %v", presses, tt.expected)
 			}
 		})
 	}
@@ -227,6 +246,44 @@ func TestPress(t *testing.T) {
 			result := press(tt.curr, tt.button)
 			if result != tt.expected {
 				t.Errorf("press() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestCalcCombs(t *testing.T) {
+	tests := []struct {
+		name     string
+		buttons  int
+		expected int
+	}{
+		{
+			name:     "0 buttons",
+			buttons:  0,
+			expected: 0,
+		},
+		{
+			name:     "1 button",
+			buttons:  1,
+			expected: 1,
+		},
+		{
+			name:     "2 buttos",
+			buttons:  2,
+			expected: 3,
+		},
+		{
+			name:     "3 buttos",
+			buttons:  3,
+			expected: 7,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := calcCombs(tt.buttons)
+			if result != tt.expected {
+				t.Errorf("calcCombs() = %v, want %v", result, tt.expected)
 			}
 		})
 	}

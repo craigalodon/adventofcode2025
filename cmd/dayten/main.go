@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -33,7 +32,7 @@ func run() error {
 
 	scanner := bufio.NewScanner(file)
 
-	presses := 0
+	accPresses := 0
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -41,10 +40,14 @@ func run() error {
 		if err != nil {
 			return fmt.Errorf("error deserializing line: %w", err)
 		}
-		presses += machine.configure()
+		presses, err := machine.configure()
+		if err != nil {
+			return fmt.Errorf("error configuring machine: %w", err)
+		}
+		accPresses += presses
 	}
 
-	fmt.Printf("Configured all machines with %d presses\n", presses)
+	fmt.Printf("Configured all machines with %d presses\n", accPresses)
 
 	return nil
 }
@@ -55,9 +58,49 @@ type Machine struct {
 	joltageRequirements map[int]bool
 }
 
-func (m *Machine) configure() int {
-	// TODO: Solve the actual problem
-	return 1
+func (m *Machine) configure() (int, error) {
+
+	combs := calcCombs(len(m.buttons))
+	var best *int
+
+	/*
+
+	 */
+
+	for i := 0; i <= combs; i++ {
+		curr := 0
+		presses := 0
+		j := 1
+		b := 0
+		for j <= i {
+			if i&j > 0 {
+				curr = press(curr, m.buttons[b])
+				presses++
+			}
+			j = j << 1
+			b++
+		}
+		if curr == m.configuration {
+			if best == nil || *best > presses {
+				best = &presses
+			}
+		}
+	}
+
+	if best == nil {
+		return 0, fmt.Errorf("no configuration found")
+	}
+
+	return *best, nil
+}
+
+func calcCombs(buttons int) int {
+	combs := 1
+	for range buttons {
+		combs = combs << 1
+	}
+	combs = combs - 1
+	return combs
 }
 
 type ParserState int
@@ -78,6 +121,7 @@ func deserialize(s string) (*Machine, error) {
 	var builder strings.Builder
 
 	configuration := 0
+	ptr := 1
 
 	buttons := make([]int, 0)
 	var button int
@@ -168,13 +212,14 @@ func deserialize(s string) (*Machine, error) {
 			}
 		case '.':
 			if parserState == bracketsOpened {
-				configuration = configuration << 1
+				ptr = ptr << 1
 				continue
 			}
 			return nil, fmt.Errorf("invalid character '.' at position %d", i)
 		case '#':
 			if parserState == bracketsOpened {
-				configuration = (configuration << 1) | 1
+				configuration = ptr | configuration
+				ptr = ptr << 1
 				continue
 			}
 			return nil, fmt.Errorf("invalid character '#' at position %d", i)
@@ -189,9 +234,6 @@ func deserialize(s string) (*Machine, error) {
 			return nil, fmt.Errorf("invalid character at position %d", i)
 		}
 	}
-
-	slices.Sort(buttons)
-	slices.Reverse(buttons)
 
 	return &Machine{
 		configuration:       configuration,
