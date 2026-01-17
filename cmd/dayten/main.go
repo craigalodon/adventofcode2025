@@ -61,7 +61,7 @@ func (m *Machine) configure() int {
 type ParserState int
 
 const (
-	null ParserState = iota
+	started ParserState = iota
 	bracketsOpened
 	bracketsClosed
 	parenthesesOpened
@@ -72,7 +72,7 @@ const (
 
 func deserialize(s string) (*Machine, error) {
 
-	parserState := null
+	parserState := started
 	var builder strings.Builder
 
 	indicators := 0
@@ -85,7 +85,7 @@ func deserialize(s string) (*Machine, error) {
 	for i, r := range s {
 		switch r {
 		case '[':
-			if parserState == null {
+			if parserState == started {
 				parserState = bracketsOpened
 				continue
 			}
