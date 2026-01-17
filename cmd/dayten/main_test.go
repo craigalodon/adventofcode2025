@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"errors"
+	"fmt"
+	"os"
 	"reflect"
 	"testing"
 )
@@ -119,6 +122,56 @@ func TestAddIndicator(t *testing.T) {
 
 			if result != tt.expected {
 				t.Errorf("addIndicator() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestConfigure(t *testing.T) {
+	tests := []struct {
+		name       string
+		serialized string
+		expected   int
+	}{
+		{
+			name:     "Example 1",
+			expected: 2,
+		},
+		{
+			name:     "Example 2",
+			expected: 3,
+		},
+		{
+			name:     "Example 3",
+			expected: 2,
+		},
+	}
+
+	filepath := "../../testdata/dayten/example.txt"
+	file, err := os.Open(filepath)
+	if err != nil {
+		t.Fatalf("error opening file: %v", filepath)
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Error closing file: %v\n", err)
+		}
+	}()
+
+	scanner := bufio.NewScanner(file)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if !scanner.Scan() {
+				t.Fatalf("unexpected end of file")
+			}
+			machine, err := deserialize(scanner.Text())
+			if err != nil {
+				t.Fatalf("deserialize() error = %v", err)
+			}
+			result := machine.configure()
+			if result != tt.expected {
+				t.Errorf("configure() = %v, want %v", result, tt.expected)
 			}
 		})
 	}
