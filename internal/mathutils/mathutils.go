@@ -56,7 +56,10 @@ func CountDigits(n int) int {
 	return d
 }
 
-func matrixReduce(matrix [][]int, m, n int) {
+func matrixReduce(matrix [][]int) {
+	m := len(matrix)
+	n := len(matrix[0])
+
 	h := 0
 	k := 0
 

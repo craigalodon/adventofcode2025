@@ -60,7 +60,7 @@ func TestMatrixReduce(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			matrixReduce(tt.matrix, len(tt.matrix), len(tt.matrix[0]))
+			matrixReduce(tt.matrix)
 			if !reflect.DeepEqual(tt.matrix, tt.expected) {
 				t.Errorf("Expected matrix %v, got %v", tt.expected, tt.matrix)
 			}
