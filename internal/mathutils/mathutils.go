@@ -1,5 +1,7 @@
 package mathutils
 
+import "math"
+
 func Mod(a, b int) int {
 	return ((a % b) + b) % b
 }
@@ -52,4 +54,35 @@ func CountDigits(n int) int {
 	}
 
 	return d
+}
+
+func matrixReduce(matrix [][]int, m, n int) {
+	h := 0
+	k := 0
+
+	for h < m && k < n {
+		iMax := h
+		for i := h + 1; i < m; i++ {
+			if math.Abs(float64(matrix[i][k])) > math.Abs(float64(matrix[iMax][k])) {
+				iMax = i
+			}
+		}
+
+		if matrix[iMax][k] == 0 {
+			k++
+		} else {
+			if h != iMax {
+				matrix[h], matrix[iMax] = matrix[iMax], matrix[h]
+			}
+			for i := h + 1; i < m; i++ {
+				f := matrix[i][k] / matrix[h][k]
+				matrix[i][k] = 0
+				for j := k + 1; j < n; j++ {
+					matrix[i][j] = matrix[i][j] - matrix[h][j]*f
+				}
+			}
+			h++
+			k++
+		}
+	}
 }
