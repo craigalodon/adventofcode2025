@@ -92,4 +92,32 @@ func matrixReduce(matrix [][]int) {
 			k++
 		}
 	}
+
+	h--
+
+	for h > 0 {
+		k = 0
+		for range n {
+			if matrix[h][k] == 1 {
+				break
+			}
+			k++
+		}
+
+		if matrix[h][k] == 0 {
+			h--
+			continue
+		}
+
+		for i := 0; i < h; i++ {
+			if matrix[i][k] != 0 {
+				f := matrix[i][k]
+				for j := 0; j < n; j++ {
+					matrix[i][j] = matrix[i][j] - matrix[h][j]*f
+				}
+			}
+		}
+
+		h--
+	}
 }
