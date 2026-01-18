@@ -74,9 +74,8 @@ func matrixReduce(matrix [][]int) {
 		if matrix[iMax][k] == 0 {
 			k++
 		} else {
-			if h != iMax {
-				matrix[h], matrix[iMax] = matrix[iMax], matrix[h]
-			}
+			matrix[h], matrix[iMax] = matrix[iMax], matrix[h]
+
 			for i := h + 1; i < m; i++ {
 				f := matrix[i][k] / matrix[h][k]
 				matrix[i][k] = 0
@@ -84,6 +83,11 @@ func matrixReduce(matrix [][]int) {
 					matrix[i][j] = matrix[i][j] - matrix[h][j]*f
 				}
 			}
+
+			for i := n - 1; i >= k; i-- {
+				matrix[h][i] = matrix[h][i] / matrix[h][k]
+			}
+
 			h++
 			k++
 		}
