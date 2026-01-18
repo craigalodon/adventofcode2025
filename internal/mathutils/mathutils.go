@@ -1,6 +1,9 @@
 package mathutils
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 func Mod(a, b int) int {
 	return ((a % b) + b) % b
@@ -56,7 +59,7 @@ func CountDigits(n int) int {
 	return d
 }
 
-func matrixReduce(matrix [][]int) {
+func matrixReduce(matrix [][]float64) error {
 	m := len(matrix)
 	n := len(matrix[0])
 
@@ -66,12 +69,12 @@ func matrixReduce(matrix [][]int) {
 	for h < m && k < n {
 		iMax := h
 		for i := h + 1; i < m; i++ {
-			if math.Abs(float64(matrix[i][k])) > math.Abs(float64(matrix[iMax][k])) {
+			if math.Abs(matrix[i][k]) > math.Abs(matrix[iMax][k]) {
 				iMax = i
 			}
 		}
 
-		if matrix[iMax][k] == 0 {
+		if isZero(matrix[iMax][k]) {
 			k++
 		} else {
 			matrix[h], matrix[iMax] = matrix[iMax], matrix[h]
@@ -104,13 +107,17 @@ func matrixReduce(matrix [][]int) {
 			k++
 		}
 
-		if matrix[h][k] == 0 {
+		if isZero(matrix[h][k]) {
 			h--
 			continue
 		}
 
+		if k == n-1 {
+			return fmt.Errorf("matrix is inconsistent")
+		}
+
 		for i := 0; i < h; i++ {
-			if matrix[i][k] != 0 {
+			if !isZero(matrix[i][k]) {
 				f := matrix[i][k]
 				for j := k; j < n; j++ {
 					matrix[i][j] = matrix[i][j] - matrix[h][j]*f
@@ -120,4 +127,11 @@ func matrixReduce(matrix [][]int) {
 
 		h--
 	}
+
+	return nil
+}
+
+func isZero(f float64) bool {
+	const epsilon = 1e-10
+	return math.Abs(f) < epsilon
 }
