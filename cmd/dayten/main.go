@@ -71,9 +71,7 @@ type Machine struct {
 	joltage       []int
 }
 
-func (m *Machine) jolt() (float64, error) {
-	jmap := make(map[int]int)
-
+func (m *Machine) createMatrix() [][]float64 {
 	matrix := make([][]float64, len(m.joltage))
 	ptr := 1
 	for i := range matrix {
@@ -82,19 +80,71 @@ func (m *Machine) jolt() (float64, error) {
 		for j, button := range m.buttons {
 			if button&ptr > 0 {
 				matrix[i][j] = 1
-				if _, ok := jmap[button]; !ok {
-					jmap[button] = m.joltage[i]
-				} else {
-					if jmap[button] > m.joltage[i] {
-						jmap[button] = m.joltage[i]
-					}
-				}
 			} else {
 				matrix[i][j] = 0
 			}
 		}
 		ptr = ptr << 1
 	}
+	return matrix
+}
+
+func getMaxPresses(m *Machine, matrix [][]float64) map[int]int {
+	maxPresses := make(map[int]int)
+
+	for k := 0; k < len(matrix[0])-1; k++ {
+		for h := 0; h < len(matrix); h++ {
+			if matrix[h][k] == 1 {
+				if _, ok := maxPresses[m.buttons[k]]; !ok {
+					maxPresses[m.buttons[k]] = m.joltage[h]
+				} else {
+					if maxPresses[m.buttons[k]] > m.joltage[h] {
+						maxPresses[m.buttons[k]] = m.joltage[h]
+					}
+				}
+			}
+		}
+	}
+	return maxPresses
+}
+
+func createRanges(m *Machine, freeVariables, maxPresses map[int]int) []*mathutils.Range {
+	ranges := make([]*mathutils.Range, len(freeVariables)+1)
+	ranges[0] = mathutils.NewRange(1, 2)
+	for i, j := range freeVariables {
+		if _, ok := maxPresses[m.buttons[i]]; !ok {
+			ranges[j+1] = mathutils.NewRange(0, 1)
+		} else {
+			ranges[j+1] = mathutils.NewRange(0, maxPresses[m.buttons[i]]+1)
+		}
+	}
+	return ranges
+}
+
+func toFloat(arr []int) []float64 {
+	out := make([]float64, len(arr))
+	for i := range arr {
+		out[i] = float64(arr[i])
+	}
+	return out
+}
+
+func roundWhileValidatingCoefs(coefs []float64) bool {
+	valid := true
+	for i, coef := range coefs {
+		rounded := math.Round(coef)
+		if !mathutils.IsZero(coef-rounded) || rounded < 0 {
+			valid = false
+			break
+		}
+		coefs[i] = rounded
+	}
+	return valid
+}
+
+func (m *Machine) jolt() (float64, error) {
+	matrix := m.createMatrix()
+	maxPresses := getMaxPresses(m, matrix)
 
 	rref, err := mathutils.MatrixReduce(matrix)
 	if err != nil {
@@ -102,60 +152,16 @@ func (m *Machine) jolt() (float64, error) {
 	}
 
 	freeVariables, params := mathutils.Parametrize(rref)
-
-	ranges := make([]*mathutils.Range, len(params[0]))
-	ranges[0] = mathutils.NewRange(1, 2)
-
-	for i, j := range freeVariables {
-		if _, ok := jmap[m.buttons[i]]; !ok {
-			ranges[j+1] = mathutils.NewRange(0, 1)
-		} else {
-			ranges[j+1] = mathutils.NewRange(0, jmap[m.buttons[i]]+1)
-		}
-	}
-
+	ranges := createRanges(m, freeVariables, maxPresses)
 	combs := mathutils.GenerateCombinations(ranges)
 
 	var best *float64
 	for _, comb := range combs {
-		coefs := make(map[int]float64)
-		valid := true
-		for i, exp := range params {
+		coefs := mathutils.GetCoefficients(params, toFloat(comb))
+		if roundWhileValidatingCoefs(coefs) && mathutils.CoefsConsistentWithMatrix(matrix, coefs) {
 			acc := 0.0
-			for i, val := range comb {
-				acc += exp[i] * float64(val)
-			}
-
-			rounded := math.Round(acc)
-			if !mathutils.IsZero(acc - rounded) {
-				valid = false
-				break
-			}
-			if rounded < 0 {
-				valid = false
-				break
-			}
-
-			coefs[i] = rounded
-		}
-
-		if valid {
-			for _, row := range matrix {
-				acc := 0.0
-				for j := 0; j < len(row)-1; j++ {
-					acc += row[j] * coefs[j]
-				}
-				if !mathutils.IsZero(acc - row[len(row)-1]) {
-					valid = false
-					break
-				}
-			}
-		}
-
-		if valid {
-			acc := 0.0
-			for _, val := range coefs {
-				acc += val
+			for _, coef := range coefs {
+				acc += coef
 			}
 			if best == nil || acc < *best {
 				best = &acc

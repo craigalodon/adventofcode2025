@@ -205,3 +205,30 @@ func IsZero(f float64) bool {
 	const epsilon = 1e-10
 	return math.Abs(f) < epsilon
 }
+
+func GetCoefficients(params [][]float64, args []float64) []float64 {
+	coefs := make([]float64, len(params))
+	for i, exp := range params {
+		acc := 0.0
+		for j, arg := range args {
+			acc += exp[j] * arg
+		}
+		coefs[i] = acc
+	}
+	return coefs
+}
+
+func CoefsConsistentWithMatrix(matrix [][]float64, coefs []float64) bool {
+	valid := true
+	for _, row := range matrix {
+		acc := 0.0
+		for i, coef := range coefs {
+			acc += row[i] * coef
+		}
+		if !IsZero(acc - row[len(row)-1]) {
+			valid = false
+			break
+		}
+	}
+	return valid
+}

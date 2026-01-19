@@ -18,9 +18,25 @@ floating point numbers instead of Go's rational number library, and that caused
 me quite a bit of debugging pain as I was approaching the finish line
 (but at least I didn't have to learn another library).
 
-Still, I'm pretty proud of this solution, and feel like cleaning it up would
+Still, I'm pretty proud of this solution and feel like cleaning it up would
 be straight forward. I think it is performant, given that many people on the 
 Reddit thread were describing run times somewhat longer than mine, though it 
 is hard to judge without knowing what devices they are using. Mostly, I
-learned a lot and persevered through each the challenges as they came,
+learned a lot and persevered through each of the challenges as they came,
 and what more can you ask from another day of the Advent of Code?
+
+## Postscript
+
+I did some tidying, breaking down `jolt()` into smaller components, hopefully
+making the logic more explicit. As always, more could be done. Many of the
+functions probably should validate the arguments passed to them. Most of them
+right now would panic if passed invalid arguments, but a few, such as
+`mathutils.Parametrize()` would not even panic.
+
+I also failed to add tests for the new helper functions, although it would 
+not have been difficult.
+
+As always, with Advent of Code, it's a challenge to know how far you should go.
+Once you've gotten the right answer, you can sort of ignore these issues, at
+least until you try to re-use some of the code you wrote. For now though,
+I've got other things to do.
