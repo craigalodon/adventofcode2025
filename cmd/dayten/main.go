@@ -1,8 +1,10 @@
 package main
 
 import (
+	"adventofcode2025/internal/mathutils"
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -32,7 +34,8 @@ func run() error {
 
 	scanner := bufio.NewScanner(file)
 
-	accPresses := 0
+	configPresses := 0
+	joltPresses := 0.0
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -40,14 +43,24 @@ func run() error {
 		if err != nil {
 			return fmt.Errorf("error deserializing line: %w", err)
 		}
-		presses, err := machine.configure()
-		if err != nil {
-			return fmt.Errorf("error configuring machine: %w", err)
+		{
+			presses, err := machine.configure()
+			if err != nil {
+				return fmt.Errorf("error configuring machine: %w", err)
+			}
+			configPresses += presses
 		}
-		accPresses += presses
+		{
+			presses, err := machine.jolt()
+			if err != nil {
+				return fmt.Errorf("error jolting machine: %w", err)
+			}
+			joltPresses += presses
+		}
 	}
 
-	fmt.Printf("Configured all machines with %d presses\n", accPresses)
+	fmt.Printf("Configured all machines with %d presses\n", configPresses)
+	fmt.Printf("Jolted all machines with %v presses\n", joltPresses)
 
 	return nil
 }
@@ -58,9 +71,103 @@ type Machine struct {
 	joltage       []int
 }
 
-func (m *Machine) jolt() (int, error) {
-	// TODO: Implement solution
-	return 0, nil
+func (m *Machine) jolt() (float64, error) {
+	jmap := make(map[int]int)
+
+	matrix := make([][]float64, len(m.joltage))
+	ptr := 1
+	for i := range matrix {
+		matrix[i] = make([]float64, len(m.buttons)+1)
+		matrix[i][len(m.buttons)] = float64(m.joltage[i])
+		for j, button := range m.buttons {
+			if button&ptr > 0 {
+				matrix[i][j] = 1
+				if _, ok := jmap[button]; !ok {
+					jmap[button] = m.joltage[i]
+				} else {
+					if jmap[button] > m.joltage[i] {
+						jmap[button] = m.joltage[i]
+					}
+				}
+			} else {
+				matrix[i][j] = 0
+			}
+		}
+		ptr = ptr << 1
+	}
+
+	rref, err := mathutils.MatrixReduce(matrix)
+	if err != nil {
+		return 0, fmt.Errorf("error reducing matrix: %w", err)
+	}
+
+	freeVariables, params := mathutils.Parametrize(rref)
+
+	ranges := make([]*mathutils.Range, len(params[0]))
+	ranges[0] = mathutils.NewRange(1, 2)
+
+	for i, j := range freeVariables {
+		if _, ok := jmap[m.buttons[i]]; !ok {
+			ranges[j+1] = mathutils.NewRange(0, 1)
+		} else {
+			ranges[j+1] = mathutils.NewRange(0, jmap[m.buttons[i]]+1)
+		}
+	}
+
+	combs := mathutils.GenerateCombinations(ranges)
+
+	var best *float64
+	for _, comb := range combs {
+		coefs := make(map[int]float64)
+		valid := true
+		for i, exp := range params {
+			acc := 0.0
+			for i, val := range comb {
+				acc += exp[i] * float64(val)
+			}
+
+			rounded := math.Round(acc)
+			if !mathutils.IsZero(acc - rounded) {
+				valid = false
+				break
+			}
+			if rounded < 0 {
+				valid = false
+				break
+			}
+
+			coefs[i] = rounded
+		}
+
+		if valid {
+			for _, row := range matrix {
+				acc := 0.0
+				for j := 0; j < len(row)-1; j++ {
+					acc += row[j] * coefs[j]
+				}
+				if !mathutils.IsZero(acc - row[len(row)-1]) {
+					valid = false
+					break
+				}
+			}
+		}
+
+		if valid {
+			acc := 0.0
+			for _, val := range coefs {
+				acc += val
+			}
+			if best == nil || acc < *best {
+				best = &acc
+			}
+		}
+	}
+
+	if best == nil {
+		return 0, fmt.Errorf("no combinations found")
+	}
+
+	return *best, nil
 }
 
 func (m *Machine) configure() (int, error) {
