@@ -46,19 +46,19 @@ func TestMatrixReduce(t *testing.T) {
 		{
 			name: "Matrix 3",
 			matrix: [][]float64{
-				{1, 1, 1, 0, 0, 0, 10},
-				{1, 0, 1, 1, 0, 0, 11},
-				{1, 1, 1, 1, 0, 0, 11},
-				{1, 1, 0, 0, 0, 0, 5},
-				{1, 0, 1, 0, 0, 0, 10},
-				{0, 0, 1, 0, 0, 0, 5}},
+				{1, 1, 1, 0, 10},
+				{1, 0, 1, 1, 11},
+				{1, 1, 1, 1, 11},
+				{1, 1, 0, 0, 5},
+				{1, 0, 1, 0, 10},
+				{0, 0, 1, 0, 5}},
 			expected: [][]float64{
-				{1, 0, 0, 0, 0, 0, 5},
-				{0, 1, 0, 0, 0, 0, 0},
-				{0, 0, 1, 0, 0, 0, 5},
-				{0, 0, 0, 1, 0, 0, 1},
-				{0, 0, 0, 0, 0, 0, 0},
-				{0, 0, 0, 0, 0, 0, 0}},
+				{1, 0, 0, 0, 5},
+				{0, 1, 0, 0, 0},
+				{0, 0, 1, 0, 5},
+				{0, 0, 0, 1, 1},
+				{0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0}},
 			err: nil,
 		},
 		{
@@ -70,21 +70,39 @@ func TestMatrixReduce(t *testing.T) {
 			expected: nil,
 			err:      errors.New("matrix is inconsistent"),
 		},
+		{
+			name: "Matrix 4",
+			matrix: [][]float64{
+				{1, 1, 1, 0, 10},
+				{1, 0, 1, 1, 11},
+				{1, 0, 1, 1, 11},
+				{1, 1, 0, 0, 5},
+				{1, 1, 1, 0, 10},
+				{0, 0, 1, 0, 5}},
+			expected: [][]float64{
+				{1, 0, 0, 1, 6},
+				{0, 1, 0, -1, -1},
+				{0, 0, 1, 0, 5},
+				{0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0}},
+			err: nil,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := matrixReduce(tt.matrix)
+			rref, err := MatrixReduce(tt.matrix)
 
 			if tt.err != nil {
 				if err == nil || err.Error() != tt.err.Error() {
-					t.Errorf("matrixReduce() error = %v, expected %v", err, tt.err)
+					t.Errorf("MatrixReduce() error = %v, expected %v", err, tt.err)
 				}
 			} else if err != nil {
-				t.Errorf("matrixReduce() unexpected error = %v", err)
+				t.Errorf("MatrixReduce() unexpected error = %v", err)
 			} else {
-				if !reflect.DeepEqual(tt.matrix, tt.expected) {
-					t.Errorf("matrixReduce() = %v, want %v", tt.matrix, tt.expected)
+				if !reflect.DeepEqual(rref, tt.expected) {
+					t.Errorf("MatrixReduce() = %v, want %v", rref, tt.expected)
 				}
 			}
 		})
@@ -127,12 +145,12 @@ func TestFindPivots(t *testing.T) {
 		{
 			name: "Matrix 3",
 			matrix: [][]float64{
-				{1, 0, 0, 0, 0, 0, 5},
-				{0, 1, 0, 0, 0, 0, 0},
-				{0, 0, 1, 0, 0, 0, 5},
-				{0, 0, 0, 1, 0, 0, 1},
-				{0, 0, 0, 0, 0, 0, 0},
-				{0, 0, 0, 0, 0, 0, 0}},
+				{1, 0, 0, 0, 5},
+				{0, 1, 0, 0, 0},
+				{0, 0, 1, 0, 5},
+				{0, 0, 0, 1, 1},
+				{0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0}},
 			expected: map[int]int{
 				0: 0,
 				1: 1,
@@ -192,12 +210,12 @@ func TestFindFreeVariables(t *testing.T) {
 		{
 			name: "Matrix 3",
 			matrix: [][]float64{
-				{1, 0, 0, 0, 0, 0, 5},
-				{0, 1, 0, 0, 0, 0, 0},
-				{0, 0, 1, 0, 0, 0, 5},
-				{0, 0, 0, 1, 0, 0, 1},
-				{0, 0, 0, 0, 0, 0, 0},
-				{0, 0, 0, 0, 0, 0, 0}},
+				{1, 0, 0, 0, 5},
+				{0, 1, 0, 0, 0},
+				{0, 0, 1, 0, 5},
+				{0, 0, 0, 1, 1},
+				{0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0}},
 			pivots: map[int]int{
 				0: 0,
 				1: 1,
@@ -219,9 +237,10 @@ func TestFindFreeVariables(t *testing.T) {
 
 func TestParametrize(t *testing.T) {
 	tests := []struct {
-		name     string
-		matrix   [][]float64
-		expected [][]float64
+		name      string
+		matrix    [][]float64
+		variables map[int]int
+		expected  [][]float64
 	}{
 		{
 			name: "Matrix 1",
@@ -230,6 +249,9 @@ func TestParametrize(t *testing.T) {
 				{0, 1, 0, 0, 0, 1, 5},
 				{0, 0, 1, 1, 0, -1, 1},
 				{0, 0, 0, 0, 1, 1, 3}},
+			variables: map[int]int{
+				3: 0,
+				5: 1},
 			expected: [][]float64{
 				{2, -1, 1},
 				{5, 0, -1},
@@ -247,6 +269,7 @@ func TestParametrize(t *testing.T) {
 				{0, 0, 0, 1, 0, 5},
 				{0, 0, 0, 0, 1, 0},
 				{0, 0, 0, 0, 0, 0}},
+			variables: map[int]int{2: 0},
 			expected: [][]float64{
 				{2, -1},
 				{5, 1},
@@ -258,28 +281,27 @@ func TestParametrize(t *testing.T) {
 		{
 			name: "Matrix 3",
 			matrix: [][]float64{
-				{1, 0, 0, 0, 0, 0, 5},
-				{0, 1, 0, 0, 0, 0, 0},
-				{0, 0, 1, 0, 0, 0, 5},
-				{0, 0, 0, 1, 0, 0, 1},
-				{0, 0, 0, 0, 0, 0, 0},
-				{0, 0, 0, 0, 0, 0, 0}},
+				{1, 0, 0, 0, 5},
+				{0, 1, 0, 0, 0},
+				{0, 0, 1, 0, 5},
+				{0, 0, 0, 1, 1},
+				{0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0}},
+			variables: map[int]int{},
 			expected: [][]float64{
 				{5},
 				{0},
 				{5},
 				{1},
-				{0},
-				{0},
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			params := parametrize(tt.matrix)
+			_, params := Parametrize(tt.matrix)
 			if !reflect.DeepEqual(params, tt.expected) {
-				t.Errorf("parametrize() = %v, want %v", params, tt.expected)
+				t.Errorf("Parametrize() = %v, want %v", params, tt.expected)
 			}
 		})
 	}
