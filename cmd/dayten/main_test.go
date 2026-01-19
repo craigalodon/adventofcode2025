@@ -137,48 +137,26 @@ func TestAddIndicator(t *testing.T) {
 	}
 }
 
-func TestGivenExamples(t *testing.T) {
+func TestGivenExamplesConfigure(t *testing.T) {
 	tests := []struct {
 		name     string
 		idx      int
 		expected int
-		callback func(*Machine) (int, error)
 	}{
 		{
-			name:     "Example 1 - Configure",
+			name:     "Example 1",
 			idx:      0,
 			expected: 2,
-			callback: func(m *Machine) (int, error) { return m.configure() },
 		},
 		{
-			name:     "Example 2 - Configure",
+			name:     "Example 2",
 			idx:      1,
 			expected: 3,
-			callback: func(m *Machine) (int, error) { return m.configure() },
 		},
 		{
-			name:     "Example 3 - Configure",
+			name:     "Example 3",
 			idx:      2,
 			expected: 2,
-			callback: func(m *Machine) (int, error) { return m.configure() },
-		},
-		{
-			name:     "Example 1 - Jolt",
-			idx:      0,
-			expected: 10,
-			callback: func(m *Machine) (int, error) { return m.jolt() },
-		},
-		{
-			name:     "Example 2 - Jolt",
-			idx:      1,
-			expected: 12,
-			callback: func(m *Machine) (int, error) { return m.jolt() },
-		},
-		{
-			name:     "Example 3 - Jolt",
-			idx:      2,
-			expected: 11,
-			callback: func(m *Machine) (int, error) { return m.jolt() },
 		},
 	}
 
@@ -207,12 +185,71 @@ func TestGivenExamples(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			machine := machines[tt.idx]
-			presses, err := tt.callback(machine)
+			presses, err := machine.configure()
 			if err != nil {
 				t.Fatalf("error applying callback: %v", err)
 			}
 			if presses != tt.expected {
-				t.Errorf("callback() = %v, want %v", presses, tt.expected)
+				t.Errorf("configure() = %v, want %v", presses, tt.expected)
+			}
+		})
+	}
+}
+
+func TestGivenExamplesJolt(t *testing.T) {
+	tests := []struct {
+		name     string
+		idx      int
+		expected float64
+	}{
+		{
+			name:     "Example 1",
+			idx:      0,
+			expected: 10,
+		},
+		{
+			name:     "Example 2",
+			idx:      1,
+			expected: 12,
+		},
+		{
+			name:     "Example 3",
+			idx:      2,
+			expected: 11,
+		},
+	}
+
+	filepath := "../../testdata/dayten/example.txt"
+	file, err := os.Open(filepath)
+	if err != nil {
+		t.Fatalf("error opening file: %v", filepath)
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Error closing file: %v\n", err)
+		}
+	}()
+
+	machines := make([]*Machine, 0)
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		machine, err := deserialize(scanner.Text())
+		if err != nil {
+			t.Fatalf("error deserializing: %v", err)
+		}
+		machines = append(machines, machine)
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			machine := machines[tt.idx]
+			presses, err := machine.jolt()
+			if err != nil {
+				t.Fatalf("error applying callback: %v", err)
+			}
+			if presses != tt.expected {
+				t.Errorf("jolt() = %v, want %v", presses, tt.expected)
 			}
 		})
 	}
