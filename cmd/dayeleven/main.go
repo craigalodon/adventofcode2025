@@ -123,6 +123,15 @@ func (p *Parser) GetRoot() (*Node, error) {
 	return root, nil
 }
 
+func (p *Parser) GetExit() (*Node, error) {
+	exit, err := p.GetNode("out")
+	if err != nil {
+		return nil, fmt.Errorf("out not found")
+	}
+
+	return exit, nil
+}
+
 func (p *Parser) Deserialize(s string) (*Node, error) {
 	p.clearCurrent()
 	p.state = readingName
