@@ -103,32 +103,22 @@ func TestParser_Deserialize_Cycle(t *testing.T) {
 		t.Errorf("GetRoot() error = %v, wantErr %v", err, nil)
 	}
 
-	found := root.Reachable(root, 4)
+	found, depth := root.Reachable(root, 4)
 
 	if found != true {
-		t.Errorf("Deserialize() = %v, want %v", found, true)
+		t.Errorf("Reachable() = %v, want %v", found, true)
+	}
+
+	if depth != 4 {
+		t.Errorf("Reachable() = %v, want %v", depth, 4)
 	}
 }
 
 func TestNode_CountPaths_ExampleInput(t *testing.T) {
-	filepath := "../../testdata/dayeleven/example.txt"
-	file, err := os.Open(filepath)
+	filepath := "../../testdata/dayeleven/example_part_one.txt"
+	parser, err := readExampleFile(filepath)
 	if err != nil {
-		t.Fatalf("error opening file: %v", filepath)
-	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "Error closing file: %v\n", err)
-		}
-	}()
-
-	scanner := bufio.NewScanner(file)
-	parser := NewParser()
-	for scanner.Scan() {
-		_, err := parser.Deserialize(scanner.Text())
-		if err != nil {
-			t.Fatalf("error deserializing: %v", err)
-		}
+		t.Fatalf("error reading file: %v", err)
 	}
 
 	root, err := parser.GetRoot()
@@ -145,4 +135,54 @@ func TestNode_CountPaths_ExampleInput(t *testing.T) {
 	if count != 5 {
 		t.Errorf("CountPaths() = %v, want %v", count, 5)
 	}
+}
+
+func TestNode_CountPathsWithStops_ExampleInput(t *testing.T) {
+	filepath := "../../testdata/dayeleven/example_part_two.txt"
+	parser, err := readExampleFile(filepath)
+	if err != nil {
+		t.Fatalf("error reading file: %v", err)
+	}
+
+	server, err := parser.GetNode("svr")
+	if err != nil {
+		t.Fatalf("GetNode() error = %v, wantErr %v", err, nil)
+	}
+
+	exit, err := parser.GetExit()
+	if err != nil {
+		t.Fatalf("GetExit() error = %v, wantErr %v", err, nil)
+	}
+
+	stops, err := getStops(parser)
+	if err != nil {
+		t.Fatalf("error getting stops: %v", err)
+	}
+
+	count := server.CountPathsWithStops(exit, 100, stops)
+	if count != 2 {
+		t.Errorf("CountPaths() = %v, want %v", count, 2)
+	}
+}
+
+func readExampleFile(filepath string) (*Parser, error) {
+	file, err := os.Open(filepath)
+	if err != nil {
+		return nil, fmt.Errorf("error opening file: %v", filepath)
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Error closing file: %v\n", err)
+		}
+	}()
+
+	scanner := bufio.NewScanner(file)
+	parser := NewParser()
+	for scanner.Scan() {
+		_, err := parser.Deserialize(scanner.Text())
+		if err != nil {
+			return nil, fmt.Errorf("error deserializing: %v", err)
+		}
+	}
+	return parser, nil
 }

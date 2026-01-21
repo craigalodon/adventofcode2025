@@ -53,7 +53,35 @@ func run() error {
 	paths := root.CountPaths(exit, 1000)
 	println("Found: ", paths)
 
+	server, err := parser.GetNode("svr")
+	if err != nil {
+		return fmt.Errorf("error getting server: %w", err)
+	}
+
+	stops, err := getStops(parser)
+	if err != nil {
+		return fmt.Errorf("error getting stops: %w", err)
+	}
+
+	serverPaths := server.CountPathsWithStops(exit, 16, stops)
+	println("Found: ", serverPaths)
+
 	return nil
+}
+
+func getStops(p *Parser) ([]*Node, error) {
+	names := []string{
+		"dac", "fft",
+	}
+	stops := make([]*Node, 0)
+	for _, name := range names {
+		node, err := p.GetNode(name)
+		if err != nil {
+			return nil, fmt.Errorf("error getting node: %w", err)
+		}
+		stops = append(stops, node)
+	}
+	return stops, nil
 }
 
 type Node struct {
@@ -82,8 +110,9 @@ func (n *Node) ForEachChild(fn func(n *Node)) {
 	}
 }
 
-func (n *Node) Reachable(other *Node, maxDepth int) bool {
+func (n *Node) Reachable(other *Node, maxDepth int) (bool, int) {
 	found := false
+	reachedAt := 0
 	var search func(*Node, int)
 	search = func(node *Node, depth int) {
 		if found || depth > maxDepth {
@@ -92,6 +121,7 @@ func (n *Node) Reachable(other *Node, maxDepth int) bool {
 
 		if node.Name == other.Name && depth > 0 {
 			found = true
+			reachedAt = depth
 			return
 		}
 
@@ -102,13 +132,13 @@ func (n *Node) Reachable(other *Node, maxDepth int) bool {
 
 	search(n, 0)
 
-	return found
+	return found, reachedAt
 }
 
 func (n *Node) CountPaths(other *Node, maxDepth int) int {
 	paths := 0
 
-	var loop func(n *Node, depth int)
+	var loop func(*Node, int)
 	loop = func(node *Node, depth int) {
 		if node.Name == other.Name {
 			paths++
@@ -125,6 +155,50 @@ func (n *Node) CountPaths(other *Node, maxDepth int) int {
 	}
 
 	loop(n, 0)
+	return paths
+}
+
+func (n *Node) CountPathsWithStops(other *Node, maxDepth int, stops []*Node) int {
+	paths := 0
+
+	stopBits := make(map[*Node]int)
+	i := 1
+	for _, stop := range stops {
+		stopBits[stop] = i
+		i <<= 1
+	}
+
+	stopBitMap := 0
+	for _, bit := range stopBits {
+		stopBitMap |= bit
+	}
+
+	var loop func(*Node, int, int)
+	loop = func(node *Node, depth int, found int) {
+		if node.Name == other.Name {
+			if found == stopBitMap {
+				paths++
+			}
+			return
+		}
+
+		if depth > maxDepth {
+			return
+		}
+
+		if bit, ok := stopBits[node]; ok {
+			if bit&found != 0 {
+				return
+			}
+			found |= bit
+		}
+
+		node.ForEachChild(func(child *Node) {
+			loop(child, depth+1, found)
+		})
+	}
+
+	loop(n, 0, 0)
 	return paths
 }
 
