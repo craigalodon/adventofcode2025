@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"slices"
 	"testing"
 )
 
@@ -72,6 +73,7 @@ func TestParser_Deserialize(t *testing.T) {
 						t.Errorf("Deserialize() = %v, want %v", result.Name, tt.expected)
 					}
 					names := result.collectChildNames()
+					slices.Sort(names)
 					if !reflect.DeepEqual(names, tt.children) {
 						t.Errorf("Deserialize() = %v, want %v", names, tt.children)
 					}
