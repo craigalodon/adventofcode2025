@@ -45,22 +45,13 @@ func run() error {
 		return fmt.Errorf("error getting root: %w", err)
 	}
 
-	seen := make(map[string]bool)
-
-	var recursiveAdd func(n *Node)
-	recursiveAdd = func(n *Node) {
-		if seen[n.Name] {
-			return
-		}
-		seen[n.Name] = true
-		for _, child := range n.children {
-			recursiveAdd(child)
-		}
+	exit, err := parser.GetExit()
+	if err != nil {
+		return fmt.Errorf("error getting exit: %w", err)
 	}
 
-	recursiveAdd(root)
-
-	println("Seen: ", len(seen))
+	found := root.Reachable(exit, 25)
+	println("Found: ", found)
 
 	return nil
 }
@@ -89,6 +80,29 @@ func (n *Node) ForEachChild(fn func(n *Node)) {
 	for _, child := range n.children {
 		fn(child)
 	}
+}
+
+func (n *Node) Reachable(other *Node, maxDepth int) bool {
+	found := false
+	var search func(*Node, int)
+	search = func(node *Node, depth int) {
+		if found || depth > maxDepth {
+			return
+		}
+
+		if node.Name == other.Name && depth > 0 {
+			found = true
+			return
+		}
+
+		node.ForEachChild(func(child *Node) {
+			search(child, depth+1)
+		})
+	}
+
+	search(n, 0)
+
+	return found
 }
 
 type Parser struct {

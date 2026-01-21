@@ -100,28 +100,7 @@ func TestDeserializeCycle(t *testing.T) {
 		t.Errorf("GetRoot() error = %v, wantErr %v", err, nil)
 	}
 
-	var found bool
-	var recursiveSearch func(*Node, int)
-	recursiveSearch = func(n *Node, depth int) {
-		if found {
-			return
-		}
-
-		if n == root && depth > 0 {
-			found = true
-			return
-		}
-
-		if depth > 10 {
-			return
-		}
-
-		n.ForEachChild(func(child *Node) {
-			recursiveSearch(child, depth+1)
-		})
-	}
-
-	recursiveSearch(root, 0)
+	found := root.Reachable(root, 4)
 
 	if found != true {
 		t.Errorf("Deserialize() = %v, want %v", found, true)
