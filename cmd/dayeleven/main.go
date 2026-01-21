@@ -105,6 +105,11 @@ func (n *Node) Reachable(other *Node, maxDepth int) bool {
 	return found
 }
 
+func (n *Node) CountPaths(other *Node) int {
+	// TODO: Implement solution
+	return 0
+}
+
 type Parser struct {
 	state   ParserState
 	builder strings.Builder

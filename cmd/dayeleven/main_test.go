@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"errors"
+	"fmt"
+	"os"
 	"reflect"
 	"testing"
 )
 
-func (n *Node) CollectChildNames() []string {
+func (n *Node) collectChildNames() []string {
 	var names []string
 	n.ForEachChild(func(child *Node) {
 		names = append(names, child.Name)
@@ -14,7 +17,7 @@ func (n *Node) CollectChildNames() []string {
 	return names
 }
 
-func TestDeserialize(t *testing.T) {
+func TestParser_Deserialize(t *testing.T) {
 	tests := []struct {
 		name     string
 		s        string
@@ -68,7 +71,7 @@ func TestDeserialize(t *testing.T) {
 					if tt.expected != result.Name {
 						t.Errorf("Deserialize() = %v, want %v", result.Name, tt.expected)
 					}
-					names := result.CollectChildNames()
+					names := result.collectChildNames()
 					if !reflect.DeepEqual(names, tt.children) {
 						t.Errorf("Deserialize() = %v, want %v", names, tt.children)
 					}
@@ -78,7 +81,7 @@ func TestDeserialize(t *testing.T) {
 	}
 }
 
-func TestDeserializeCycle(t *testing.T) {
+func TestParser_Deserialize_Cycle(t *testing.T) {
 	data := []string{
 		"you: aaa",
 		"aaa: bbb",
@@ -104,5 +107,42 @@ func TestDeserializeCycle(t *testing.T) {
 
 	if found != true {
 		t.Errorf("Deserialize() = %v, want %v", found, true)
+	}
+}
+
+func TestNode_CountPaths_ExampleInput(t *testing.T) {
+	filepath := "../../testdata/dayeleven/example.txt"
+	file, err := os.Open(filepath)
+	if err != nil {
+		t.Fatalf("error opening file: %v", filepath)
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Error closing file: %v\n", err)
+		}
+	}()
+
+	scanner := bufio.NewScanner(file)
+	parser := NewParser()
+	for scanner.Scan() {
+		_, err := parser.Deserialize(scanner.Text())
+		if err != nil {
+			t.Fatalf("error deserializing: %v", err)
+		}
+	}
+
+	root, err := parser.GetRoot()
+	if err != nil {
+		t.Fatalf("GetRoot() error = %v, wantErr %v", err, nil)
+	}
+
+	exit, err := parser.GetExit()
+	if err != nil {
+		t.Fatalf("GetExit() error = %v, wantErr %v", err, nil)
+	}
+
+	count := root.CountPaths(exit)
+	if count != 5 {
+		t.Errorf("CountPaths() = %v, want %v", count, 5)
 	}
 }
