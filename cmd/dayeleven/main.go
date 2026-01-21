@@ -50,8 +50,8 @@ func run() error {
 		return fmt.Errorf("error getting exit: %w", err)
 	}
 
-	found := root.Reachable(exit, 25)
-	println("Found: ", found)
+	paths := root.CountPaths(exit, 1000)
+	println("Found: ", paths)
 
 	return nil
 }
@@ -105,9 +105,27 @@ func (n *Node) Reachable(other *Node, maxDepth int) bool {
 	return found
 }
 
-func (n *Node) CountPaths(other *Node) int {
-	// TODO: Implement solution
-	return 0
+func (n *Node) CountPaths(other *Node, maxDepth int) int {
+	paths := 0
+
+	var loop func(n *Node, depth int)
+	loop = func(node *Node, depth int) {
+		if node.Name == other.Name {
+			paths++
+			return
+		}
+
+		if depth > maxDepth {
+			return
+		}
+
+		node.ForEachChild(func(child *Node) {
+			loop(child, depth+1)
+		})
+	}
+
+	loop(n, 0)
+	return paths
 }
 
 type Parser struct {

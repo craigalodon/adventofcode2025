@@ -141,7 +141,7 @@ func TestNode_CountPaths_ExampleInput(t *testing.T) {
 		t.Fatalf("GetExit() error = %v, wantErr %v", err, nil)
 	}
 
-	count := root.CountPaths(exit)
+	count := root.CountPaths(exit, 100)
 	if count != 5 {
 		t.Errorf("CountPaths() = %v, want %v", count, 5)
 	}
