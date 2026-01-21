@@ -103,14 +103,10 @@ func TestParser_Deserialize_Cycle(t *testing.T) {
 		t.Errorf("GetRoot() error = %v, wantErr %v", err, nil)
 	}
 
-	found, depth := root.Reachable(root, 4)
+	found := root.Reachable(root, 4)
 
 	if found != true {
 		t.Errorf("Reachable() = %v, want %v", found, true)
-	}
-
-	if depth != 4 {
-		t.Errorf("Reachable() = %v, want %v", depth, 4)
 	}
 }
 

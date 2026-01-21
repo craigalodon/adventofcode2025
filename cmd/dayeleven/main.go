@@ -50,7 +50,7 @@ func run() error {
 		return fmt.Errorf("error getting exit: %w", err)
 	}
 
-	paths := root.CountPaths(exit, 1000)
+	paths := root.CountPaths(exit, 120)
 	println("Found: ", paths)
 
 	server, err := parser.GetNode("svr")
@@ -110,9 +110,8 @@ func (n *Node) ForEachChild(fn func(n *Node)) {
 	}
 }
 
-func (n *Node) Reachable(other *Node, maxDepth int) (bool, int) {
+func (n *Node) Reachable(other *Node, maxDepth int) bool {
 	found := false
-	reachedAt := 0
 	var search func(*Node, int)
 	search = func(node *Node, depth int) {
 		if found || depth > maxDepth {
@@ -121,7 +120,6 @@ func (n *Node) Reachable(other *Node, maxDepth int) (bool, int) {
 
 		if node.Name == other.Name && depth > 0 {
 			found = true
-			reachedAt = depth
 			return
 		}
 
@@ -132,7 +130,7 @@ func (n *Node) Reachable(other *Node, maxDepth int) (bool, int) {
 
 	search(n, 0)
 
-	return found, reachedAt
+	return found
 }
 
 func (n *Node) CountPaths(other *Node, maxDepth int) int {
