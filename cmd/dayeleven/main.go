@@ -50,7 +50,7 @@ func run() error {
 		return fmt.Errorf("error getting exit: %w", err)
 	}
 
-	paths := root.CountPaths(exit, 120)
+	paths := root.CountPaths(exit)
 	println("Found: ", paths)
 
 	server, err := parser.GetNode("svr")
@@ -58,29 +58,66 @@ func run() error {
 		return fmt.Errorf("error getting server: %w", err)
 	}
 
-	stops, err := getStops(parser)
+	stops, err := NewStops(parser)
 	if err != nil {
 		return fmt.Errorf("error getting stops: %w", err)
 	}
 
-	serverPaths := server.CountPathsWithStops(exit, 16, stops)
-	println("Found: ", serverPaths)
+	paths = countPathsWithStops(server, exit, stops)
+
+	println("Found: ", paths)
 
 	return nil
 }
 
-func getStops(p *Parser) ([]*Node, error) {
-	names := []string{
-		"dac", "fft",
+func countPathsWithStops(root, other *Node, stops *Stops) int {
+	var paths int
+	{
+		branch := root.CountPaths(stops.dac)
+		branch *= stops.dac.CountPaths(stops.fft)
+		branch *= stops.fft.CountPaths(other)
+		paths = branch
 	}
-	stops := make([]*Node, 0)
-	for _, name := range names {
+	{
+		branch := root.CountPaths(stops.fft)
+		branch *= stops.fft.CountPaths(stops.dac)
+		branch *= stops.dac.CountPaths(other)
+		paths += branch
+	}
+
+	return paths
+}
+
+type Stops struct {
+	dac *Node
+	fft *Node
+}
+
+func NewStops(p *Parser) (*Stops, error) {
+
+	stops := &Stops{}
+	for _, name := range []string{"dac", "fft"} {
 		node, err := p.GetNode(name)
 		if err != nil {
 			return nil, fmt.Errorf("error getting node: %w", err)
 		}
-		stops = append(stops, node)
+		switch name {
+		case "dac":
+			stops.dac = node
+		case "fft":
+			stops.fft = node
+		default:
+			return nil, fmt.Errorf("unknown node: %s", name)
+		}
 	}
+
+	if stops.dac == nil {
+		return nil, fmt.Errorf("could not find dac")
+	}
+	if stops.fft == nil {
+		return nil, fmt.Errorf("could not find fft")
+	}
+
 	return stops, nil
 }
 
@@ -133,71 +170,29 @@ func (n *Node) Reachable(other *Node, maxDepth int) bool {
 	return found
 }
 
-func (n *Node) CountPaths(other *Node, maxDepth int) int {
-	paths := 0
+func (n *Node) CountPaths(other *Node) int {
+	memo := make(map[*Node]int)
 
-	var loop func(*Node, int)
-	loop = func(node *Node, depth int) {
+	var loop func(*Node) int
+	loop = func(node *Node) int {
 		if node.Name == other.Name {
-			paths++
-			return
+			return 1
 		}
 
-		if depth > maxDepth {
-			return
+		if val, ok := memo[node]; ok {
+			return val
 		}
 
+		sum := 0
 		node.ForEachChild(func(child *Node) {
-			loop(child, depth+1)
+			sum += loop(child)
 		})
+
+		memo[node] = sum
+		return sum
 	}
 
-	loop(n, 0)
-	return paths
-}
-
-func (n *Node) CountPathsWithStops(other *Node, maxDepth int, stops []*Node) int {
-	paths := 0
-
-	stopBits := make(map[*Node]int)
-	i := 1
-	for _, stop := range stops {
-		stopBits[stop] = i
-		i <<= 1
-	}
-
-	stopBitMap := 0
-	for _, bit := range stopBits {
-		stopBitMap |= bit
-	}
-
-	var loop func(*Node, int, int)
-	loop = func(node *Node, depth int, found int) {
-		if node.Name == other.Name {
-			if found == stopBitMap {
-				paths++
-			}
-			return
-		}
-
-		if depth > maxDepth {
-			return
-		}
-
-		if bit, ok := stopBits[node]; ok {
-			if bit&found != 0 {
-				return
-			}
-			found |= bit
-		}
-
-		node.ForEachChild(func(child *Node) {
-			loop(child, depth+1, found)
-		})
-	}
-
-	loop(n, 0, 0)
-	return paths
+	return loop(n)
 }
 
 type Parser struct {

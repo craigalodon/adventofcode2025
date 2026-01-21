@@ -129,7 +129,7 @@ func TestNode_CountPaths_ExampleInput(t *testing.T) {
 		t.Fatalf("GetExit() error = %v, wantErr %v", err, nil)
 	}
 
-	count := root.CountPaths(exit, 100)
+	count := root.CountPaths(exit)
 	if count != 5 {
 		t.Errorf("CountPaths() = %v, want %v", count, 5)
 	}
@@ -152,12 +152,12 @@ func TestNode_CountPathsWithStops_ExampleInput(t *testing.T) {
 		t.Fatalf("GetExit() error = %v, wantErr %v", err, nil)
 	}
 
-	stops, err := getStops(parser)
+	stops, err := NewStops(parser)
 	if err != nil {
 		t.Fatalf("error getting stops: %v", err)
 	}
 
-	count := server.CountPathsWithStops(exit, 100, stops)
+	count := countPathsWithStops(server, exit, stops)
 	if count != 2 {
 		t.Errorf("CountPaths() = %v, want %v", count, 2)
 	}
